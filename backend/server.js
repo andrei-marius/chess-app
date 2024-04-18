@@ -27,10 +27,12 @@ io.on('connection', (socket) => {
 
       
       whitePlayers.forEach((player) => {
+        socket.join('White')
         player.emit('assignTeam', { player: player.id, side: 'White' });
       });
 
       blackPlayers.forEach((player) => {
+        socket.join('Black')
         player.emit('assignTeam', { player: player.id, side: 'Black' });
       });
     }
@@ -45,9 +47,8 @@ io.on('connection', (socket) => {
   })
 
   socket.on('sendMove', (data) => {
-    socket.join(data.side)
-    socket.to(data.side).emit("receiveMoves", data.move);
     console.log(data)
+    io.to(data.side).emit("receiveMoves", data.move);
   })
 
   socket.on('disconnect', () => {

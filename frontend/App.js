@@ -9,23 +9,14 @@ const App = () => {
   const [socket, setSocket] = useState(null);
   const [title, setTitle] = useState('JOIN');
   const [teamInfo, setTeamInfo] = useState(null);
-  const [text, onChangeText] = useState('Useless Text');
+  const [text, onChangeText] = useState('');
   const [move, setMove] = useState(null);
 
-  const queueMax = 2;
-
-  useEffect(() => {
-    if (socket) {
-      socket.on('receiveMoves', (data) => {
-        console.log('Received data:', data);
-        setMove(data);
-      });
-    }
-  }, [socket])
+  const queueMax = 1;
 
   const handleQueue = () => {
     if (!socket) {
-      const newSocket = io('http://10.60.9.94:3000');
+      const newSocket = io('http://192.168.1.169:3000');
   
       newSocket.on('connect', () => {
         console.log(newSocket.id, 'joined');
@@ -42,6 +33,11 @@ const App = () => {
       newSocket.on('assignTeam', (data) => {
         console.log('Received team assignment:', data);
         setTeamInfo(data);
+      });
+
+      newSocket.on('receiveMoves', (data) => {
+        console.log('Received data:', data);
+        setMove(data);
       });
   
       setSocket(newSocket)
@@ -64,7 +60,7 @@ const App = () => {
 
   const handleSend = () => {
     console.log(text)
-    socket.emit('sendMove', { move: text, side: teamInfo.side })
+    socket.emit('sendMove', { move: text, side: teamInfo.side})
   }
 
   return (
@@ -74,17 +70,16 @@ const App = () => {
         <>
           <Text style={{ fontSize: 20 }}>Player: {teamInfo.player}</Text>
           <Text style={{ fontSize: 20 }}>Side: {teamInfo.side}</Text>
-          <TextInput onChangeText={onChangeText} value={text} style={{ height: 50, width: 200, padding: 10, borderWidth: 1 }} />
+          <TextInput placeholder='Type...' onChangeText={onChangeText} value={text} style={{ height: 50, width: 200, padding: 10, borderWidth: 1 }} />
           <Button title='SEND' onPress={handleSend} />
         </>
       }
-      {!connected && queueLength < queueMax && 
+      {queueLength < queueMax && 
         <>
           <Text style={{ fontSize: 20 }}>Queue {queueLength}/{queueMax}</Text>
           <Button title={title} onPress={handleQueue} />
         </>
       }
-
     </View>
   );
 };
