@@ -9,14 +9,14 @@ const App = () => {
   const [socket, setSocket] = useState(null);
   const [title, setTitle] = useState('JOIN');
   const [teamInfo, setTeamInfo] = useState(null);
-  const [text, onChangeText] = useState('');
-  const [move, setMove] = useState(null);
+  const [moves, setMoves] = useState(null);
+  const [mostFrequent, setMostFrequent] = useState(null);
 
-  const queueMax = 1;
+  const queueMax = 3;
 
   const handleQueue = () => {
     if (!socket) {
-      const newSocket = io('http://192.168.1.169:3000');
+      const newSocket = io('http://192.168.203.33:3000');
   
       newSocket.on('connect', () => {
         console.log(newSocket.id, 'joined');
@@ -37,7 +37,12 @@ const App = () => {
 
       newSocket.on('receiveMoves', (data) => {
         console.log('Received data:', data);
-        setMove(data);
+        setMoves(data);
+      });
+
+      newSocket.on('receiveMostFrequent', (data) => {
+        console.log('Received data:', data);
+        setMostFrequent(data)
       });
   
       setSocket(newSocket)
@@ -58,23 +63,40 @@ const App = () => {
     }
   }
 
-  const handleSend = () => {
-    console.log(text)
-    socket.emit('sendMove', { move: text, side: teamInfo.side})
+  const sendRock = () => {
+    socket.emit('sendMove', { player: socket.id, move: 'rock', side: teamInfo.side})
+  }
+  const sendScissors = () => {
+    socket.emit('sendMove', { player: socket.id, move: 'scissors', side: teamInfo.side})
+  }
+  const sendPaper = () => {
+    socket.emit('sendMove', { player: socket.id, move: 'paper', side: teamInfo.side})
+  }
+
+  const getMostFrequent = () => {
+    socket.emit('getMostFrequent', teamInfo.side)
   }
 
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      {move && <Text style={{ fontSize: 20 }}>Move: {move}</Text>}
+      {moves && !mostFrequent && moves.map((move, index) => (
+        <View key={index}>
+          <Text style={{ fontSize: 20 }}>Player: {move.player}</Text>
+          <Text style={{ fontSize: 20 }}>Move: {move.move}</Text>
+        </View>
+      ))}
+      {mostFrequent && <Text style={{ fontSize: 20 }}>Most frequent move: {mostFrequent}</Text>}
       {teamInfo && 
         <>
           <Text style={{ fontSize: 20 }}>Player: {teamInfo.player}</Text>
           <Text style={{ fontSize: 20 }}>Side: {teamInfo.side}</Text>
-          <TextInput placeholder='Type...' onChangeText={onChangeText} value={text} style={{ height: 50, width: 200, padding: 10, borderWidth: 1 }} />
-          <Button title='SEND' onPress={handleSend} />
+          <Button title='SEND ROCK' onPress={sendRock} />
+          <Button title='SEND SCISSORS' onPress={sendScissors} />
+          <Button title='SEND PAPER' onPress={sendPaper} />
+          <Button title='GET MOST FREQUENT' onPress={getMostFrequent} />
         </>
       }
-      {queueLength < queueMax && 
+      {!teamInfo && queueLength < queueMax && 
         <>
           <Text style={{ fontSize: 20 }}>Queue {queueLength}/{queueMax}</Text>
           <Button title={title} onPress={handleQueue} />

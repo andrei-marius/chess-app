@@ -7,7 +7,29 @@ const server = createServer(app);
 const io = new Server(server);
 
 let queueLength = 0;
-const queueMax = 1;
+const queueMax = 3;
+let blackArr = [];
+let whiteArr = [];
+
+function mostFrequentPropertyValues(array) {
+  // Extract values of the specified property from the array of objects
+  const propValues = array.map(obj => obj['move']);
+
+  // Count the frequency of each property value
+  const frequencyMap = propValues.reduce((acc, val) => {
+    acc[val] = (acc[val] || 0) + 1;
+    return acc;
+  }, {});
+
+  // Find the highest frequency
+  const maxFrequency = Math.max(...Object.values(frequencyMap));
+
+  // Find the property values with the highest frequency
+  const mostFrequentValues = Object.keys(frequencyMap).filter(key => frequencyMap[key] === maxFrequency);
+
+  return mostFrequentValues;
+}
+
 
 io.on('connection', (socket) => {
   console.log(socket.id, 'connected')
@@ -27,12 +49,12 @@ io.on('connection', (socket) => {
 
       
       whitePlayers.forEach((player) => {
-        socket.join('White')
+        player.join('White')
         player.emit('assignTeam', { player: player.id, side: 'White' });
       });
 
       blackPlayers.forEach((player) => {
-        socket.join('Black')
+        player.join('Black')
         player.emit('assignTeam', { player: player.id, side: 'Black' });
       });
     }
@@ -47,8 +69,20 @@ io.on('connection', (socket) => {
   })
 
   socket.on('sendMove', (data) => {
-    console.log(data)
-    io.to(data.side).emit("receiveMoves", data.move);
+    if (data.side === 'Black') {
+      blackArr.push(data)
+    }
+    if (data.side === 'White') {
+      whiteArr.push(data)
+    }
+
+    console.log(blackArr)
+    console.log(whiteArr)
+    io.to(data.side).emit("receiveMoves", data.side === 'White' ? whiteArr : blackArr);
+  })
+
+  socket.on('getMostFrequent', (data) => {
+    io.to(data).emit("receiveMostFrequent", data === 'White' ? mostFrequentPropertyValues(whiteArr) : mostFrequentPropertyValues(blackArr));
   })
 
   socket.on('disconnect', () => {
