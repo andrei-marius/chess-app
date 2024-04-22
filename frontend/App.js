@@ -12,54 +12,61 @@ const App = () => {
   const [moves, setMoves] = useState(null);
   const [mostFrequent, setMostFrequent] = useState(null);
 
-  const queueMax = 3;
+  const queueMax = 4;
 
-  const handleQueue = () => {
+  useEffect(() => {
     if (!socket) {
       const newSocket = io('http://192.168.203.33:3000');
   
       newSocket.on('connect', () => {
-        console.log(newSocket.id, 'joined');
-        newSocket.emit('joinQueue')
-        setConnected(true)
-        setTitle('CANCEL');
-      });
-
-      newSocket.on('updateQueue', (data) => {
-        console.log('Received queue length:', data);
-        setQueueLength(data);
-      });
-
-      newSocket.on('assignTeam', (data) => {
-        console.log('Received team assignment:', data);
-        setTeamInfo(data);
-      });
-
-      newSocket.on('receiveMoves', (data) => {
-        console.log('Received data:', data);
-        setMoves(data);
-      });
-
-      newSocket.on('receiveMostFrequent', (data) => {
-        console.log('Received data:', data);
-        setMostFrequent(data)
-      });
+        console.log(newSocket.id, 'connected');
+        // newSocket.emit('joinQueue')
+        // setConnected(true)
+        // setTitle('CANCEL');
+      
+        newSocket.on('updateQueue', (data) => {
+          console.log('Received queue length:', data);
+          setQueueLength(data);
+        });
   
+        newSocket.on('assignTeam', (data) => {
+          console.log('Received team assignment:', data);
+          setTeamInfo(data);
+        });
+  
+        newSocket.on('receiveMoves', (data) => {
+          console.log('Received data:', data);
+          setMoves(data);
+        });
+  
+        newSocket.on('receiveMostFrequent', (data) => {
+          console.log('Received data:', data);
+          setMostFrequent(data)
+        });
+
+        newSocket.on('receiveVotes', (data) => {
+          console.log('Received data:', data);
+          setMostFrequent(data)
+        });
+      });
+
       setSocket(newSocket)
-    } else {
-      if (!connected && queueLength < queueMax) {
-        console.log(socket.id, 'joined');
-        socket.emit('joinQueue')
-        setConnected(true);
-        setTitle('CANCEL');
-      }
-  
-      if (connected) {
-        console.log(socket.id, 'cancelled');
-        socket.emit('cancelQueue')
-        setConnected(false);
-        setTitle('JOIN');
-      }
+    }
+  }, [])
+
+  const handleQueue = () => {
+    if (!connected && queueLength < queueMax) {
+      console.log(socket.id, 'joined');
+      socket.emit('joinQueue')
+      setConnected(true);
+      setTitle('CANCEL');
+    }
+
+    if (connected) {
+      console.log(socket.id, 'cancelled');
+      socket.emit('cancelQueue')
+      setConnected(false);
+      setTitle('JOIN');
     }
   }
 
@@ -77,6 +84,12 @@ const App = () => {
     socket.emit('getMostFrequent', teamInfo.side)
   }
 
+  voteMove = (index) => {
+    let arrCopy = [...mostFrequent]
+    arrCopy[index].numberOfVotes++
+    socket.emit('voteMove', { player: socket.id, mostFrequent: arrCopy, side: teamInfo.side  })
+  }
+
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
       {moves && !mostFrequent && moves.map((move, index) => (
@@ -85,7 +98,18 @@ const App = () => {
           <Text style={{ fontSize: 20 }}>Move: {move.move}</Text>
         </View>
       ))}
-      {mostFrequent && <Text style={{ fontSize: 20 }}>Most frequent move: {mostFrequent}</Text>}
+      {mostFrequent && mostFrequent.map((item, index) => (
+        <View key={index}>
+          <Text style={{ fontSize: 20 }}>Suggested move</Text>
+          <Text style={{ fontSize: 20 }}>{item.move}</Text>
+          {mostFrequent.length > 1 && 
+            <>
+              <Button title='VOTE' onPress={() => voteMove(index)} />
+              <Text style={{ fontSize: 20 }}>{item.numberOfVotes}</Text>
+            </>
+          }
+        </View>
+      ))}
       {teamInfo && 
         <>
           <Text style={{ fontSize: 20 }}>Player: {teamInfo.player}</Text>
