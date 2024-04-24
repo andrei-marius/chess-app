@@ -7,7 +7,7 @@ const server = createServer(app);
 const io = new Server(server);
 
 let queueLength = 0;
-let queueMax = 4;
+let queueMax = 3;
 let blackArr = [];
 let whiteArr = [];
 

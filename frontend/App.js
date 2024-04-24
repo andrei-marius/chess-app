@@ -11,12 +11,14 @@ const App = () => {
   const [teamInfo, setTeamInfo] = useState(null);
   const [moves, setMoves] = useState(null);
   const [mostFrequent, setMostFrequent] = useState(null);
+  const [votedMove, setVotedMove] = useState(null);
+  const [votingLocked, setVotingLocked] = useState(false);
 
-  const queueMax = 4;
+  const queueMax = 3;
 
   useEffect(() => {
     if (!socket) {
-      const newSocket = io('http://192.168.203.33:3000');
+      const newSocket = io('http://172.20.10.2:3000');
   
       newSocket.on('connect', () => {
         console.log(newSocket.id, 'connected');
@@ -41,12 +43,16 @@ const App = () => {
   
         newSocket.on('receiveMostFrequent', (data) => {
           console.log('Received data:', data);
-          setMostFrequent(data)
+          setMostFrequent(data);
+          setVotingLocked(false);
         });
 
         newSocket.on('receiveVotes', (data) => {
           console.log('Received data:', data);
-          setMostFrequent(data)
+          setMostFrequent(data);
+          const maxVotesMove = data.reduce((prev, current) => (prev.numberOfVotes > current.numberOfVotes) ? prev : current);
+          setVotedMove(maxVotesMove);
+          setVotingLocked(true);
         });
       });
 
@@ -84,10 +90,11 @@ const App = () => {
     socket.emit('getMostFrequent', teamInfo.side)
   }
 
-  voteMove = (index) => {
+  const voteMove = (index) => {
     let arrCopy = [...mostFrequent]
     arrCopy[index].numberOfVotes++
-    socket.emit('voteMove', { player: socket.id, mostFrequent: arrCopy, side: teamInfo.side  })
+    socket.emit('voteMove', { player: socket.id, mostFrequent: arrCopy, side: teamInfo.side  });
+    setVotingLocked(true);
   }
 
   return (
@@ -125,6 +132,11 @@ const App = () => {
           <Text style={{ fontSize: 20 }}>Queue {queueLength}/{queueMax}</Text>
           <Button title={title} onPress={handleQueue} />
         </>
+      }
+      {votingLocked && votedMove && 
+        <View>
+          <Text style={{ fontSize: 20 }}>Selected move to play: {votedMove.move}</Text>
+        </View>
       }
     </View>
   );
