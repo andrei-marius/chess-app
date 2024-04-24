@@ -7,9 +7,12 @@ const server = createServer(app);
 const io = new Server(server);
 
 let queueLength = 0;
-let queueMax = 3;
+let queueMax = 4;
 let blackArr = [];
 let whiteArr = [];
+let finalArr = []
+let whiteFinalMove = []
+let blackFinalMove = []
 
 function mostFrequentPropertyValues(array) {
   // Extract values of the specified property from the array of objects
@@ -41,8 +44,31 @@ function shuffleArray(array) {
   return array;
 }
 
+  function determineWinner(team1, team2) {
+    console.log('team 1', team1)
+    console.log('team 2', team2)
+    const moves = { rock: "scissors", paper: "rock", scissors: "paper" };
+    const moves2 = { rock: "rock", paper: "paper", scissors: "scissors" };
+
+    // if (team1.move || !(team2.move in moves2)) return "Invalid move!";
+    
+    if (team1.move === team2.move) return "It's a tie!";
+    
+    return moves[team1.move] === team2.move ? `${team1.side} with ${team1.move} won against ${team2.side} with ${team2.move}` 
+    : `${team2.side} with ${team2.move} won against ${team1.side} with ${team1.move}`;
+  }
+
 io.on('connection', (socket) => {
   console.log(socket.id, 'connected')
+
+  socket.on('restart', () => {
+    queueLength = 0;
+    blackArr = [];
+    whiteArr = [];
+    whiteFinalMove = []
+    blackFinalMove = []
+    io.emit('restartGame')
+  })
 
   socket.on('joinQueue', () => {
     if (queueLength < queueMax) {
@@ -105,6 +131,23 @@ io.on('connection', (socket) => {
 
   socket.on('voteMove', (data) => {
     io.to(data.side).emit("receiveVotes", data.mostFrequent);
+  })
+
+  socket.on('sendFinalMoves', data => {
+    console.log('data side', data.side)
+
+    if (whiteFinalMove.length < 1 || blackFinalMove.length < 1) {
+      if (data.side === 'White') {
+        whiteFinalMove.push({ move: data.move, side: 'White'})
+      } else {
+        blackFinalMove.push({ move: data.move, side: 'Black'})
+      }
+    }
+
+    console.log('black final', blackFinalMove)
+    console.log('white final', whiteFinalMove)
+
+    if (whiteFinalMove.length === 1 && blackFinalMove.length === 1) io.emit("receiveWinner", determineWinner(whiteFinalMove[0], blackFinalMove[0]));
   })
 
   // socket.on('disconnect', () => {
