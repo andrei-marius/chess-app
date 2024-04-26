@@ -14,12 +14,14 @@ const App = () => {
   const [votedMove, setVotedMove] = useState(null);
   const [votingLocked, setVotingLocked] = useState(false);
   const [winner, setWinner] = useState(null);
-
-  const queueMax = 4;
+  const [castVote, setCastVote] = useState(null);
+  const [blackTeamVoted, setBlackTeamVoted] = useState(false);
+  const [whiteTeamVoted, setWhiteTeamVoted] = useState(false);
+  const queueMax = 1;
 
   useEffect(() => {
     if (!socket) {
-      const newSocket = io('http://172.20.10.4:3000');
+      const newSocket = io('http://192.168.46.94:3000');
   
       newSocket.on('connect', () => {
         console.log(newSocket.id, 'connected');
@@ -40,6 +42,22 @@ const App = () => {
         newSocket.on('receiveMoves', (data) => {
           console.log('Received data:', data);
           setMoves(data);
+          if (data.side === "Black" && arrLengthCheck(data, blackPlayers)) {
+          return io.emit("blackTeamVoted");
+        }
+            if (data.side === "White" && arrLengthCheck(data, whitePlayers)) {
+             return io.emit("WhiteTeamVoted");
+            }
+              
+          
+        });
+        newSocket.on('blackTeamVoted', (data) => {
+          console.log('Received data:', data);
+          setBlackTeamVoted(true);
+        });
+        newSocket.on('whiteTeamVoted', (data) => {
+          console.log('Received data:', data);
+          setWhiteTeamVoted(true);
         });
   
         newSocket.on('receiveMostFrequent', (data) => {
@@ -84,12 +102,15 @@ const App = () => {
   }
 
   const sendRock = () => {
+    setCastVote(true);
     socket.emit('sendMove', { player: socket.id, move: 'rock', side: teamInfo.side})
   }
   const sendScissors = () => {
+    setCastVote(true);
     socket.emit('sendMove', { player: socket.id, move: 'scissors', side: teamInfo.side})
   }
   const sendPaper = () => {
+    setCastVote(true);
     socket.emit('sendMove', { player: socket.id, move: 'paper', side: teamInfo.side})
   }
 
@@ -119,6 +140,9 @@ const App = () => {
     setVotingLocked(false)
     setTitle('JOIN')
     setJoined(false)
+    setCastVote(null)
+    setBlackTeamVoted(false)
+    setWhiteTeamVoted(false)
   }
 
   return (      
@@ -147,22 +171,31 @@ const App = () => {
                 }
               </View>
             )) : null}
-            {teamInfo && 
+            {teamInfo && !castVote &&
               <>
                 <Text style={{ fontSize: 20 }}>Player: {teamInfo.player}</Text>
                 <Text style={{ fontSize: 20 }}>Side: {teamInfo.side}</Text>
                 <Button style={styles.button} title='SEND ROCK' onPress={sendRock} />
                 <Button style={styles.button} title='SEND SCISSORS' onPress={sendScissors} />
                 <Button style={styles.button} title='SEND PAPER' onPress={sendPaper} />
-                <Button style={styles.button} title='GET MOST FREQUENT' onPress={getMostFrequent} />
               </>
-            }
-            {!teamInfo && queueLength < queueMax ?
+              }
+            {teamInfo && castVote && teamInfo.side === "White" && whiteTeamVoted &&
+              
+                <Button style={styles.button} title='GET MOST FREQUENT' onPress={getMostFrequent} />
+              } 
+            {teamInfo && castVote && teamInfo.side === "Black" && blackTeamVoted &&
+              
+                <Button style={styles.button} title='GET MOST FREQUENT' onPress={getMostFrequent} />
+              }
+            {!teamInfo && queueLength < queueMax &&
               <>
                 <Text style={{ fontSize: 20 }}>Queue {queueLength}/{queueMax}</Text>
                 <Button style={styles.button} title={title} onPress={handleQueue} />
               </>
-            : <Button style={styles.button} title='SEE FINAL MOVE' onPress={getFinalMove}/>}
+              }
+            {blackTeamVoted || whiteTeamVoted &&
+             <Button style={styles.button} title='SEE FINAL MOVE' onPress={getFinalMove}/>}
           </View>
         }
       </View>

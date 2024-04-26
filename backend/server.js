@@ -7,12 +7,14 @@ const server = createServer(app);
 const io = new Server(server);
 
 let queueLength = 0;
-let queueMax = 4;
+let queueMax = 1;
 let blackArr = [];
 let whiteArr = [];
 let finalArr = []
 let whiteFinalMove = []
 let blackFinalMove = []
+let whitePlayers = []
+let blackPlayers = []
 
 function mostFrequentPropertyValues(array) {
   // Extract values of the specified property from the array of objects
@@ -43,6 +45,11 @@ function shuffleArray(array) {
   }
   return array;
 }
+function arrLengthCheck (array1,array2){
+array1.length === array2.length ? true : false;
+}
+
+  
 
   function determineWinner(team1, team2) {
     console.log('team 1', team1)
@@ -88,8 +95,8 @@ io.on('connection', (socket) => {
       const midpointIndex = Math.ceil(playerArray.length / 2);
     
       // Divide the shuffled array into two teams
-      const whitePlayers = shuffledPlayers.slice(0, midpointIndex);
-      const blackPlayers = shuffledPlayers.slice(midpointIndex);
+      whitePlayers = shuffledPlayers.slice(0, midpointIndex);
+      blackPlayers = shuffledPlayers.slice(midpointIndex);
     
       // Assign teams and emit events
       whitePlayers.forEach((player) => {
@@ -115,14 +122,20 @@ io.on('connection', (socket) => {
   socket.on('sendMove', (data) => {
     if (data.side === 'Black') {
       blackArr.push(data)
+      
+      io.to(data.side).emit("receiveMoves", data.side === 'White' ? whiteArr : blackArr)
+      console.log(blackPlayers)
     }
     if (data.side === 'White') {
       whiteArr.push(data)
+      
+      io.to(data.side).emit("receiveMoves", data.side === 'White' ? whiteArr : blackArr)
+      console.log(whitePlayers)
     }
 
     console.log(blackArr)
     console.log(whiteArr)
-    io.to(data.side).emit("receiveMoves", data.side === 'White' ? whiteArr : blackArr);
+    ;
   })
 
   socket.on('getMostFrequent', (data) => {
@@ -137,12 +150,12 @@ io.on('connection', (socket) => {
     console.log('data side', data.side)
 
     if (whiteFinalMove.length < 1 || blackFinalMove.length < 1) {
-      if (data.side === 'White') {
+      if (data.side === 'White' && whiteFinalMove.length < 1) {
         whiteFinalMove.push({ move: data.move, side: 'White'})
       } else {
         blackFinalMove.push({ move: data.move, side: 'Black'})
       }
-    }
+    } else return console.log("how are you here?")
 
     console.log('black final', blackFinalMove)
     console.log('white final', whiteFinalMove)
