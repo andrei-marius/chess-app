@@ -15,8 +15,13 @@ const App = () => {
   const [mostFrequent, setMostFrequent] = useState(null);
   const [votedMove, setVotedMove] = useState(null);
   const [votingLocked, setVotingLocked] = useState(false);
+  const [voted, setVoted] = useState(false);
   const [winner, setWinner] = useState(null);
-
+  const [castVote, setCastVote] = useState(null);
+  const [blackTeamVoted, setBlackTeamVoted] = useState(false);
+  const [whiteTeamVoted, setWhiteTeamVoted] = useState(false);
+  const [onlyWhiteMove, setOnlyWhiteMove] = useState(false);
+  const [onlyBlackMove, setOnlyBlackMove] = useState(false);
   const queueMax = 4;
 
   const chessboardRef = useRef<ChessboardRef>(null);
@@ -35,7 +40,7 @@ const App = () => {
 
   useEffect(() => {
     if (!socket) {
-      const newSocket = io('http://172.20.10.4:3000');
+      const newSocket = io('http://192.168.142.94:3000');
   
       newSocket.on('connect', () => {
         console.log(newSocket.id, 'connected');
@@ -54,21 +59,62 @@ const App = () => {
         });
   
         newSocket.on('receiveMoves', (data) => {
-          console.log('Received data:', data);
-          setMoves(data);
+          console.log('Received move data:', data)
+          setMoves(data)                    
+        });
+
+        newSocket.on('blackTeamAllVoted', (data) => {
+          console.log('blackTeamAllVoted');
+          setBlackTeamVoted(true);
+          setVotingLocked(true)
+          newSocket.emit('getMostFrequent', data)
+        });
+
+        newSocket.on('whiteTeamAllVoted', (data) => {
+          console.log('whiteTeamAllVoted');
+          setWhiteTeamVoted(true);
+          setVotingLocked(true)
+          newSocket.emit('getMostFrequent', data)
         });
   
         newSocket.on('receiveMostFrequent', (data) => {
-          console.log('Received data:', data);
+          console.log('Received most frequent:', data);
           setMostFrequent(data);
           // setVotingLocked(false);
         });
 
+        newSocket.on('receiveOnlyWhiteMove', (data) => {
+          console.log('Only white move');
+          setOnlyWhiteMove(true);
+          setVotingLocked(true)
+          newSocket.emit('onlyTwoFinalMoves', data)
+        });  
+
+        newSocket.on('receiveOnlyBlackMove', (data) => {
+          console.log('Only black move');
+          setOnlyBlackMove(true);
+          setVotingLocked(true)
+          newSocket.emit('onlyTwoFinalMoves', data)
+        });
+
         newSocket.on('receiveVotes', (data) => {
+          console.log('Received voting data:', data);
+          setMostFrequent(data);
+        }); 
+        
+        newSocket.on('onlyTwoFinalMoves', (data) => {
           console.log('Received data:', data);
           setMostFrequent(data);
         });
 
+        newSocket.on("receiveFinalVotes", (data) => {
+          console.log("birdo ", data)
+          const maxVotesMove = data.mostFrequent.reduce((prev, current) => (prev.numberOfVotes > current.numberOfVotes) ? prev : current);
+          newSocket.emit('sendFinalMoves', {...maxVotesMove, side: data.side });
+          
+          // setVotingLocked(true);
+        });
+        
         newSocket.on('receiveWinner', (data) => {
           console.log('Received winner:', data);
           setVotedMove(data);
@@ -76,9 +122,10 @@ const App = () => {
 
         newSocket.on('restartGame', () => {
           restartGame()
-        })
-      });
+        }) 
 
+      });
+      
       setSocket(newSocket)
     }
   }, [])
@@ -100,12 +147,15 @@ const App = () => {
   }
 
   const sendRock = () => {
+    setCastVote(true);
     socket.emit('sendMove', { player: socket.id, move: 'rock', side: teamInfo.side})
   }
   const sendScissors = () => {
+    setCastVote(true);
     socket.emit('sendMove', { player: socket.id, move: 'scissors', side: teamInfo.side})
   }
   const sendPaper = () => {
+    setCastVote(true);
     socket.emit('sendMove', { player: socket.id, move: 'paper', side: teamInfo.side})
   }
 
@@ -117,13 +167,11 @@ const App = () => {
     let arrCopy = [...mostFrequent]
     arrCopy[index].numberOfVotes++
     socket.emit('voteMove', { player: socket.id, mostFrequent: arrCopy, side: teamInfo.side  });
-    // setVotingLocked(true);
+    setVoted(true);
   }
   
   const getFinalMove = () => {
-    const maxVotesMove = mostFrequent.reduce((prev, current) => (prev.numberOfVotes > current.numberOfVotes) ? prev : current);
-    socket.emit('sendFinalMoves', {...maxVotesMove, side: teamInfo.side });
-    setVotingLocked(true);
+
   }
 
   const restartGame = () => {
@@ -135,58 +183,67 @@ const App = () => {
     setVotingLocked(false)
     setTitle('JOIN')
     setJoined(false)
+    setCastVote(false)
+    setBlackTeamVoted(false)
+    setWhiteTeamVoted(false)
+    setOnlyWhiteMove(false);
+    setOnlyBlackMove(false);
+    setVoted(false)
+
   }
 
-  return (    
-    <GestureHandlerRootView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      {/* {votedMove ? 
-        <View>
-          <Text style={{ fontSize: 20 }}>{votedMove}</Text>
-          <Button title='RESTART' onPress={() => socket.emit('restart')} />
-        </View> :
-        <View>
-          {moves && !mostFrequent && moves.map((move, index) => (
-            <View key={index}>
-              <Text style={{ fontSize: 20 }}>Player: {move.player}</Text>
-              <Text style={{ fontSize: 20 }}>Move: {move.move}</Text>
-            </View>
-          ))}
-          {!votingLocked && mostFrequent && mostFrequent.map((item, index) => (
-            <View key={index}>
-              <Text style={{ fontSize: 20 }}>Suggested move</Text>
-              <Text style={{ fontSize: 20 }}>{item.move}</Text>
-              {mostFrequent.length > 1 && 
-                <>
-                  <Button title='VOTE' onPress={() => voteMove(index)} />
-                  <Text style={{ fontSize: 20 }}>{item.numberOfVotes}</Text>
-                </>
+  return (      
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        {votedMove ? 
+          <View>
+            <Text style={{ fontSize: 20 }}>{votedMove}</Text>
+            <Button title='RESTART' onPress={() => socket.emit('restart')} />
+          </View> :
+          <View>
+            {moves && !mostFrequent && moves.map((move, index) => (
+              <View key={index}>
+                <Text style={{ fontSize: 20 }}>Player: {move.player}</Text>
+                <Text style={{ fontSize: 20 }}>Move: {move.move}</Text>
+              </View>
+            ))}
+            {votingLocked && mostFrequent ? mostFrequent.map((item, index) => (
+              <View key={index}>
+                <Text style={{ fontSize: 20 }}>Suggested move</Text>
+                <Text style={{ fontSize: 20 }}>{item.move}</Text>
+                {mostFrequent.length > 1 && 
+                  <>
+                    <Button  style={styles.button} title='VOTE' onPress={() => voteMove(index)} />
+                    <Text style={{ fontSize: 20 }}>{item.numberOfVotes}</Text>
+                  </>
+                }
+              </View>
+            )) : null}
+            {teamInfo && !castVote &&
+              <>
+                <Text style={{ fontSize: 20 }}>Player: {teamInfo.player}</Text>
+                <Text style={{ fontSize: 20 }}>Side: {teamInfo.side}</Text>
+                <Button style={styles.button} title='SEND ROCK' onPress={sendRock} />
+                <Button style={styles.button} title='SEND SCISSORS' onPress={sendScissors} />
+                <Button style={styles.button} title='SEND PAPER' onPress={sendPaper} />
+              </>
               }
-            </View>
-          ))}
-          {teamInfo &&
-            <>
-              <Text style={{ fontSize: 20 }}>Player: {teamInfo.player}</Text>
-              <Text style={{ fontSize: 20 }}>Side: {teamInfo.side}</Text>
-              <Button title='SEND ROCK' onPress={sendRock} />
-              <Button title='SEND SCISSORS' onPress={sendScissors} />
-              <Button title='SEND PAPER' onPress={sendPaper} />
-              <Button title='GET MOST FREQUENT' onPress={getMostFrequent} />
-            </>
-          }
-          {!teamInfo && queueLength < queueMax ?
-            <>
-              <Text style={{ fontSize: 20 }}>Queue {queueLength}/{queueMax}</Text>
-              <Button title={title} onPress={handleQueue} />
-            </>
-          : <Button title='SEE FINAL MOVE' onPress={getFinalMove}/>}
-        </View>
-      } */}
-         
-      <Chessboard 
-        ref={chessboardRef}
-        // durations={{ move: 1000 }} 
-      />
-    </GestureHandlerRootView>
+            {/* {votingLocked && teamInfo && castVote && teamInfo.side === "White" && whiteTeamVoted && !onlyWhiteMove &&
+              
+                <Button style={styles.button} title='GET MOST FREQUENT' onPress={getMostFrequent} />
+              } 
+            {votingLocked && teamInfo && castVote && teamInfo.side === "Black" && blackTeamVoted && !onlyBlackMove &&
+              
+                <Button style={styles.button} title='GET MOST FREQUENT' onPress={getMostFrequent} />
+              } */}
+            {!teamInfo && queueLength < queueMax &&
+              <>
+                <Text style={{ fontSize: 20 }}>Queue {queueLength}/{queueMax}</Text>
+                <Button style={styles.button} title={title} onPress={handleQueue} />
+              </>
+              }
+          </View>
+        }
+      </View>
   );
 };
 
