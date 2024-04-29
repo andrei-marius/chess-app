@@ -20,7 +20,7 @@ const App = () => {
   const [whiteTeamVoted, setWhiteTeamVoted] = useState(false);
   const [onlyWhiteMove, setOnlyWhiteMove] = useState(false);
   const [onlyBlackMove, setOnlyBlackMove] = useState(false);
-  const queueMax = 5;
+  const queueMax = 4;
 
   useEffect(() => {
     if (!socket) {
@@ -50,19 +50,19 @@ const App = () => {
         newSocket.on('blackTeamAllVoted', (data) => {
           console.log('blackTeamAllVoted');
           setBlackTeamVoted(true);
-          setTeamInfo(data)
           setVotingLocked(true)
+          newSocket.emit('getMostFrequent', data)
         });
 
         newSocket.on('whiteTeamAllVoted', (data) => {
           console.log('whiteTeamAllVoted');
           setWhiteTeamVoted(true);
-          setTeamInfo(data)
           setVotingLocked(true)
+          newSocket.emit('getMostFrequent', data)
         });
   
         newSocket.on('receiveMostFrequent', (data) => {
-          console.log('Received data:', data);
+          console.log('Received most frequent:', data);
           setMostFrequent(data);
           // setVotingLocked(false);
         });
@@ -71,20 +71,18 @@ const App = () => {
           console.log('Only white move');
           setOnlyWhiteMove(true);
           setVotingLocked(true)
-          setTeamInfo(data)
-          socket.emit('onlyTwoFinalMoves', data)
+          newSocket.emit('onlyTwoFinalMoves', data)
         });  
 
         newSocket.on('receiveOnlyBlackMove', (data) => {
           console.log('Only black move');
           setOnlyBlackMove(true);
           setVotingLocked(true)
-          setTeamInfo(data)
-          socket.emit('onlyTwoFinalMoves', data)
+          newSocket.emit('onlyTwoFinalMoves', data)
         });
 
         newSocket.on('receiveVotes', (data) => {
-          console.log('Received data:', data);
+          console.log('Received voting data:', data);
           setMostFrequent(data);
         }); 
         
@@ -93,6 +91,14 @@ const App = () => {
           setMostFrequent(data);
         });
 
+        newSocket.on("receiveFinalVotes", (data) => {
+          console.log("birdo ", data)
+          const maxVotesMove = data.mostFrequent.reduce((prev, current) => (prev.numberOfVotes > current.numberOfVotes) ? prev : current);
+          newSocket.emit('sendFinalMoves', {...maxVotesMove, side: data.side });
+          
+          // setVotingLocked(true);
+        });
+        
         newSocket.on('receiveWinner', (data) => {
           console.log('Received winner:', data);
           setVotedMove(data);
@@ -100,9 +106,10 @@ const App = () => {
 
         newSocket.on('restartGame', () => {
           restartGame()
-        })
-      });
+        }) 
 
+      });
+      
       setSocket(newSocket)
     }
   }, [])
@@ -148,10 +155,7 @@ const App = () => {
   }
   
   const getFinalMove = () => {
-    console.log("im really here")
-    const maxVotesMove = mostFrequent.reduce((prev, current) => (prev.numberOfVotes > current.numberOfVotes) ? prev : current);
-    socket.emit('sendFinalMoves', {...maxVotesMove, side: teamInfo.side });
-    setVotingLocked(true);
+
   }
 
   const restartGame = () => {
@@ -163,7 +167,7 @@ const App = () => {
     setVotingLocked(false)
     setTitle('JOIN')
     setJoined(false)
-    setCastVote(null)
+    setCastVote(false)
     setBlackTeamVoted(false)
     setWhiteTeamVoted(false)
     setOnlyWhiteMove(false);
@@ -186,13 +190,13 @@ const App = () => {
                 <Text style={{ fontSize: 20 }}>Move: {move.move}</Text>
               </View>
             ))}
-            {votingLocked && !voted && mostFrequent ? mostFrequent.map((item, index) => (
+            {votingLocked && mostFrequent ? mostFrequent.map((item, index) => (
               <View key={index}>
                 <Text style={{ fontSize: 20 }}>Suggested move</Text>
                 <Text style={{ fontSize: 20 }}>{item.move}</Text>
                 {mostFrequent.length > 1 && 
                   <>
-                    <Button style={styles.button} title='VOTE' onPress={() => voteMove(index)} />
+                    <Button  style={styles.button} title='VOTE' onPress={() => voteMove(index)} />
                     <Text style={{ fontSize: 20 }}>{item.numberOfVotes}</Text>
                   </>
                 }
@@ -207,14 +211,14 @@ const App = () => {
                 <Button style={styles.button} title='SEND PAPER' onPress={sendPaper} />
               </>
               }
-            {votingLocked && teamInfo && castVote && teamInfo.side === "White" && whiteTeamVoted && !onlyWhiteMove &&
+            {/* {votingLocked && teamInfo && castVote && teamInfo.side === "White" && whiteTeamVoted && !onlyWhiteMove &&
               
                 <Button style={styles.button} title='GET MOST FREQUENT' onPress={getMostFrequent} />
               } 
             {votingLocked && teamInfo && castVote && teamInfo.side === "Black" && blackTeamVoted && !onlyBlackMove &&
               
                 <Button style={styles.button} title='GET MOST FREQUENT' onPress={getMostFrequent} />
-              }
+              } */}
             {!teamInfo && queueLength < queueMax &&
               <>
                 <Text style={{ fontSize: 20 }}>Queue {queueLength}/{queueMax}</Text>

@@ -7,7 +7,7 @@ const server = createServer(app);
 const io = new Server(server);
 
 let queueLength = 0;
-let queueMax = 5
+let queueMax = 4
 let blackArr = [];
 let whiteArr = [];
 let finalArr = []
@@ -15,6 +15,8 @@ let whiteFinalMove = []
 let blackFinalMove = []
 let whitePlayers = []
 let blackPlayers = []
+let whiteVotes = 0
+let blackVotes = 0
 
 function mostFrequentPropertyValues(array) {
   // Extract values of the specified property from the array of objects
@@ -55,9 +57,9 @@ return array1.length === array2.length ? true : false;
     console.log('team 1', team1)
     console.log('team 2', team2)
     const moves = { rock: "scissors", paper: "rock", scissors: "paper" };
-    const moves2 = [ "rock", "paper","scissors"];
+    // const moves2 = [ "rock", "paper","scissors"];
 
-    if (team1.move || !(team2.move in moves2)) return "Invalid move!";
+    // if (team1.move || !(team2.move in moves2)) return "Invalid move!";
     
     if (team1.move === team2.move) return "It's a tie!";
     
@@ -160,16 +162,35 @@ io.on('connection', (socket) => {
   })
 
   socket.on('getMostFrequent', (data) => {
-    if (data === 'White' && mostFrequentPropertyValues(whiteArr).length===1){
-    io.to(data).emit("receiveOnlyWhiteMove", mostFrequentPropertyValues(whiteArr))
-    } else if (data === 'Black' && mostFrequentPropertyValues(blackArr).length===1){
-    io.to(data).emit("receiveOnlyBlackMove", mostFrequentPropertyValues(blackArr))
-    } else
-    io.to(data).emit("receiveMostFrequent", data === 'White' ? mostFrequentPropertyValues(whiteArr) : mostFrequentPropertyValues(blackArr));
+    console.log("getMostFrequent ", data)
+
+    // if (data.side === 'White' && mostFrequentPropertyValues(data).length===1){
+    // io.to(data.side).emit("receiveOnlyWhiteMove", mostFrequentPropertyValues(data))
+    // } else if (data.side === 'Black' && mostFrequentPropertyValues(data).length===1){
+    // io.to(data.side).emit("receiveOnlyBlackMove", mostFrequentPropertyValues(data))
+    // } 
+    console.log(mostFrequentPropertyValues(data))
+    io.to(data[0].side).emit("receiveMostFrequent", mostFrequentPropertyValues(data));
   })
 
   socket.on('voteMove', (data) => {
-    io.to(data.side).emit("receiveVotes", data.mostFrequent);
+    console.log("move was voted")
+    console.log(data)
+    io.to(data.side).emit("receiveVotes", data.mostFrequent)
+    if (data.side === "Black"){
+     blackVotes++
+      if(blackVotes >= blackPlayers.length){
+        
+        io.to("Black").emit("receiveFinalVotes", { side: "Black" , mostFrequent: data.mostFrequent} );
+      }
+    }
+    if(data.side === "White"){
+      whiteVotes++
+      if(whiteVotes >= whitePlayers.length){
+        io.to("White").emit("receiveFinalVotes",{ side: "White" , mostFrequent: data.mostFrequent});
+      }
+    }
+   
   })
 
   socket.on('sendFinalMoves', data => {
@@ -205,13 +226,13 @@ io.on('connection', (socket) => {
     }
   })
 
-  socket.on('disconnect', () => {
-    if (queueLength > 0) {
-      queueLength--;
-      io.emit('updateQueue', queueLength)
-      console.log('player disconnected');
-    }
-  });
+  // socket.on('disconnect', () => {
+  //   if (queueLength > 0) {
+  //     queueLength--;
+  //     io.emit('updateQueue', queueLength)
+  //     console.log('player disconnected');
+  //   }
+  // });
 });
 
 const port = process.env.PORT || 3000;
