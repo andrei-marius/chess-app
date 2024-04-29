@@ -13,15 +13,18 @@ const App = () => {
   const [mostFrequent, setMostFrequent] = useState(null);
   const [votedMove, setVotedMove] = useState(null);
   const [votingLocked, setVotingLocked] = useState(false);
+  const [voted, setVoted] = useState(false);
   const [winner, setWinner] = useState(null);
   const [castVote, setCastVote] = useState(null);
   const [blackTeamVoted, setBlackTeamVoted] = useState(false);
   const [whiteTeamVoted, setWhiteTeamVoted] = useState(false);
-  const queueMax = 1;
+  const [onlyWhiteMove, setOnlyWhiteMove] = useState(false);
+  const [onlyBlackMove, setOnlyBlackMove] = useState(false);
+  const queueMax = 5;
 
   useEffect(() => {
     if (!socket) {
-      const newSocket = io('http://192.168.46.94:3000');
+      const newSocket = io('http://192.168.142.94:3000');
   
       newSocket.on('connect', () => {
         console.log(newSocket.id, 'connected');
@@ -40,24 +43,22 @@ const App = () => {
         });
   
         newSocket.on('receiveMoves', (data) => {
-          console.log('Received data:', data);
-          setMoves(data);
-          if (data.side === "Black" && arrLengthCheck(data, blackPlayers)) {
-          return io.emit("blackTeamVoted");
-        }
-            if (data.side === "White" && arrLengthCheck(data, whitePlayers)) {
-             return io.emit("WhiteTeamVoted");
-            }
-              
-          
+          console.log('Received move data:', data)
+          setMoves(data)                    
         });
-        newSocket.on('blackTeamVoted', (data) => {
-          console.log('Received data:', data);
+
+        newSocket.on('blackTeamAllVoted', (data) => {
+          console.log('blackTeamAllVoted');
           setBlackTeamVoted(true);
+          setTeamInfo(data)
+          setVotingLocked(true)
         });
-        newSocket.on('whiteTeamVoted', (data) => {
-          console.log('Received data:', data);
+
+        newSocket.on('whiteTeamAllVoted', (data) => {
+          console.log('whiteTeamAllVoted');
           setWhiteTeamVoted(true);
+          setTeamInfo(data)
+          setVotingLocked(true)
         });
   
         newSocket.on('receiveMostFrequent', (data) => {
@@ -66,7 +67,28 @@ const App = () => {
           // setVotingLocked(false);
         });
 
+        newSocket.on('receiveOnlyWhiteMove', (data) => {
+          console.log('Only white move');
+          setOnlyWhiteMove(true);
+          setVotingLocked(true)
+          setTeamInfo(data)
+          socket.emit('onlyTwoFinalMoves', data)
+        });  
+
+        newSocket.on('receiveOnlyBlackMove', (data) => {
+          console.log('Only black move');
+          setOnlyBlackMove(true);
+          setVotingLocked(true)
+          setTeamInfo(data)
+          socket.emit('onlyTwoFinalMoves', data)
+        });
+
         newSocket.on('receiveVotes', (data) => {
+          console.log('Received data:', data);
+          setMostFrequent(data);
+        }); 
+        
+        newSocket.on('onlyTwoFinalMoves', (data) => {
           console.log('Received data:', data);
           setMostFrequent(data);
         });
@@ -122,10 +144,11 @@ const App = () => {
     let arrCopy = [...mostFrequent]
     arrCopy[index].numberOfVotes++
     socket.emit('voteMove', { player: socket.id, mostFrequent: arrCopy, side: teamInfo.side  });
-    // setVotingLocked(true);
+    setVoted(true);
   }
   
   const getFinalMove = () => {
+    console.log("im really here")
     const maxVotesMove = mostFrequent.reduce((prev, current) => (prev.numberOfVotes > current.numberOfVotes) ? prev : current);
     socket.emit('sendFinalMoves', {...maxVotesMove, side: teamInfo.side });
     setVotingLocked(true);
@@ -143,6 +166,10 @@ const App = () => {
     setCastVote(null)
     setBlackTeamVoted(false)
     setWhiteTeamVoted(false)
+    setOnlyWhiteMove(false);
+    setOnlyBlackMove(false);
+    setVoted(false)
+
   }
 
   return (      
@@ -159,7 +186,7 @@ const App = () => {
                 <Text style={{ fontSize: 20 }}>Move: {move.move}</Text>
               </View>
             ))}
-            {!votingLocked ? mostFrequent && mostFrequent.map((item, index) => (
+            {votingLocked && !voted && mostFrequent ? mostFrequent.map((item, index) => (
               <View key={index}>
                 <Text style={{ fontSize: 20 }}>Suggested move</Text>
                 <Text style={{ fontSize: 20 }}>{item.move}</Text>
@@ -180,11 +207,11 @@ const App = () => {
                 <Button style={styles.button} title='SEND PAPER' onPress={sendPaper} />
               </>
               }
-            {teamInfo && castVote && teamInfo.side === "White" && whiteTeamVoted &&
+            {votingLocked && teamInfo && castVote && teamInfo.side === "White" && whiteTeamVoted && !onlyWhiteMove &&
               
                 <Button style={styles.button} title='GET MOST FREQUENT' onPress={getMostFrequent} />
               } 
-            {teamInfo && castVote && teamInfo.side === "Black" && blackTeamVoted &&
+            {votingLocked && teamInfo && castVote && teamInfo.side === "Black" && blackTeamVoted && !onlyBlackMove &&
               
                 <Button style={styles.button} title='GET MOST FREQUENT' onPress={getMostFrequent} />
               }
@@ -194,8 +221,6 @@ const App = () => {
                 <Button style={styles.button} title={title} onPress={handleQueue} />
               </>
               }
-            {blackTeamVoted || whiteTeamVoted &&
-             <Button style={styles.button} title='SEE FINAL MOVE' onPress={getFinalMove}/>}
           </View>
         }
       </View>

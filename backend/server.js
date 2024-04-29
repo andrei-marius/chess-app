@@ -7,7 +7,7 @@ const server = createServer(app);
 const io = new Server(server);
 
 let queueLength = 0;
-let queueMax = 1;
+let queueMax = 5
 let blackArr = [];
 let whiteArr = [];
 let finalArr = []
@@ -46,7 +46,7 @@ function shuffleArray(array) {
   return array;
 }
 function arrLengthCheck (array1,array2){
-array1.length === array2.length ? true : false;
+return array1.length === array2.length ? true : false;
 }
 
   
@@ -55,9 +55,9 @@ array1.length === array2.length ? true : false;
     console.log('team 1', team1)
     console.log('team 2', team2)
     const moves = { rock: "scissors", paper: "rock", scissors: "paper" };
-    const moves2 = { rock: "rock", paper: "paper", scissors: "scissors" };
+    const moves2 = [ "rock", "paper","scissors"];
 
-    // if (team1.move || !(team2.move in moves2)) return "Invalid move!";
+    if (team1.move || !(team2.move in moves2)) return "Invalid move!";
     
     if (team1.move === team2.move) return "It's a tie!";
     
@@ -120,25 +120,51 @@ io.on('connection', (socket) => {
   })
 
   socket.on('sendMove', (data) => {
+    
     if (data.side === 'Black') {
       blackArr.push(data)
-      
-      io.to(data.side).emit("receiveMoves", data.side === 'White' ? whiteArr : blackArr)
-      console.log(blackPlayers)
+      console.log(arrLengthCheck(blackArr, blackPlayers))
+      console.log(blackPlayers.length)
+
+      console.log(blackArr.length)
+
+        if (arrLengthCheck(blackArr, blackPlayers)){
+          console.log("all black team voted")
+          io.to(data.side).emit('blackTeamAllVoted', blackArr)
+        }
+        if (arrLengthCheck(blackArr, blackPlayers) && blackArr.length===1){
+          io.to(data.side).emit('receiveOnlyBlackMove', data)
+          console.log("only one on black")
+          io.to(data.side).emit("onlyTwoFinalMoves", blackArr)
+        } 
+      io.to(data.side).emit("receiveMoves", blackArr)
     }
+    
     if (data.side === 'White') {
       whiteArr.push(data)
-      
-      io.to(data.side).emit("receiveMoves", data.side === 'White' ? whiteArr : blackArr)
-      console.log(whitePlayers)
-    }
-
+      console.log(arrLengthCheck(whiteArr, whitePlayers))
+      console.log(whitePlayers.length)
+      console.log(whiteArr.length)
+        if (arrLengthCheck(whiteArr, whitePlayers)){
+          console.log("all white team voted")
+          io.to(data.side).emit('whiteTeamAllVoted', whiteArr)
+        } if (arrLengthCheck(whiteArr, whitePlayers) && whiteArr.length===1){
+          io.to(data.side).emit('receiveOnlyWhiteMove', data)
+          console.log("only one on white")
+          io.to(data.side).emit("onlyTwoFinalMoves", whiteArr) 
+          // tjek om det virker at køre den igennem clienten hvis data bliver sendt med derhen, og så tilbage igen til onlyTwoFinalMoves
+        } 
+        io.to(data.side).emit("receiveMoves", whiteArr)}
     console.log(blackArr)
     console.log(whiteArr)
-    ;
   })
 
   socket.on('getMostFrequent', (data) => {
+    if (data === 'White' && mostFrequentPropertyValues(whiteArr).length===1){
+    io.to(data).emit("receiveOnlyWhiteMove", mostFrequentPropertyValues(whiteArr))
+    } else if (data === 'Black' && mostFrequentPropertyValues(blackArr).length===1){
+    io.to(data).emit("receiveOnlyBlackMove", mostFrequentPropertyValues(blackArr))
+    } else
     io.to(data).emit("receiveMostFrequent", data === 'White' ? mostFrequentPropertyValues(whiteArr) : mostFrequentPropertyValues(blackArr));
   })
 
@@ -152,7 +178,7 @@ io.on('connection', (socket) => {
     if (whiteFinalMove.length < 1 || blackFinalMove.length < 1) {
       if (data.side === 'White' && whiteFinalMove.length < 1) {
         whiteFinalMove.push({ move: data.move, side: 'White'})
-      } else {
+      } else if (data.side === 'Black' && blackFinalMove.length < 1) {
         blackFinalMove.push({ move: data.move, side: 'Black'})
       }
     } else return console.log("how are you here?")
@@ -163,13 +189,29 @@ io.on('connection', (socket) => {
     if (whiteFinalMove.length === 1 && blackFinalMove.length === 1) io.emit("receiveWinner", determineWinner(whiteFinalMove[0], blackFinalMove[0]));
   })
 
-  // socket.on('disconnect', () => {
-  //   if (queueLength > 0) {
-  //     queueLength--;
-  //     io.emit('updateQueue', queueLength)
-  //     console.log('player disconnected');
-  //   }
-  // });
+  socket.on('onlyTwoFinalMoves', data => {
+   console.log("got it ")
+    if (data.side === 'White' && whiteArr.length ===1 && whiteFinalMove < 1) {
+        whiteFinalMove.push({ move: data.move, side: 'White'})
+      } else if (data.side === 'Black' && blackArr.length ===1 && blackFinalMove < 1) {
+        blackFinalMove.push({ move: data.move, side: 'Black'})
+      }
+     else return console.log("how are you here?")
+
+    console.log('black final', blackFinalMove)
+    console.log('white final', whiteFinalMove)
+    if(whiteFinalMove > 0 && blackFinalMove > 0){ 
+      io.emit("receiveWinner", determineWinner(whiteFinalMove, blackFinalMove));
+    }
+  })
+
+  socket.on('disconnect', () => {
+    if (queueLength > 0) {
+      queueLength--;
+      io.emit('updateQueue', queueLength)
+      console.log('player disconnected');
+    }
+  });
 });
 
 const port = process.env.PORT || 3000;
