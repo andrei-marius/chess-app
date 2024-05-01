@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, Button, TextInput, StyleSheet } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, Button, TextInput, StyleSheet, ButtonProps } from 'react-native';
 import io from 'socket.io-client';
+import Chessboard, { ChessboardRef } from 'react-native-chessboard';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const App = () => {
   const [message, setMessage] = useState('');
@@ -22,9 +24,23 @@ const App = () => {
   const [onlyBlackMove, setOnlyBlackMove] = useState(false);
   const queueMax = 4;
 
+  const chessboardRef = useRef<ChessboardRef>(null);
+
+  // useEffect(() => {
+  //   (async () => {
+  //     await chessboardRef.current?.move({ from: 'e2', to: 'e4' });
+  //     await chessboardRef.current?.move({ from: 'e7', to: 'e5' });
+  //     await chessboardRef.current?.move({ from: 'd1', to: 'f3' });
+  //     await chessboardRef.current?.move({ from: 'a7', to: 'a6' });
+  //     await chessboardRef.current?.move({ from: 'f1', to: 'c4' });
+  //     await chessboardRef.current?.move({ from: 'a6', to: 'a5' });
+  //     await chessboardRef.current?.move({ from: 'f3', to: 'f7' });
+  //   })();
+  // }, []);
+
   useEffect(() => {
     if (!socket) {
-      const newSocket = io('http://192.168.142.94:3000');
+      const newSocket = io('http://172.20.10.2:3000');
   
       newSocket.on('connect', () => {
         console.log(newSocket.id, 'connected');
@@ -176,42 +192,45 @@ const App = () => {
 
   }
 
-  return (      
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        {votedMove ? 
-          <View>
-            <Text style={{ fontSize: 20 }}>{votedMove}</Text>
-            <Button title='RESTART' onPress={() => socket.emit('restart')} />
-          </View> :
-          <View>
-            {moves && !mostFrequent && moves.map((move, index) => (
-              <View key={index}>
-                <Text style={{ fontSize: 20 }}>Player: {move.player}</Text>
-                <Text style={{ fontSize: 20 }}>Move: {move.move}</Text>
-              </View>
-            ))}
-            {votingLocked && mostFrequent ? mostFrequent.map((item, index) => (
-              <View key={index}>
-                <Text style={{ fontSize: 20 }}>Suggested move</Text>
-                <Text style={{ fontSize: 20 }}>{item.move}</Text>
-                {mostFrequent.length > 1 && 
-                  <>
-                    <Button  style={styles.button} title='VOTE' onPress={() => voteMove(index)} />
-                    <Text style={{ fontSize: 20 }}>{item.numberOfVotes}</Text>
-                  </>
-                }
-              </View>
-            )) : null}
-            {teamInfo && !castVote &&
-              <>
-                <Text style={{ fontSize: 20 }}>Player: {teamInfo.player}</Text>
-                <Text style={{ fontSize: 20 }}>Side: {teamInfo.side}</Text>
-                <Button style={styles.button} title='SEND ROCK' onPress={sendRock} />
-                <Button style={styles.button} title='SEND SCISSORS' onPress={sendScissors} />
-                <Button style={styles.button} title='SEND PAPER' onPress={sendPaper} />
-              </>
+return (
+  <GestureHandlerRootView style={{ flex: 1 }}>
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Chessboard ref={chessboardRef} />
+      {votedMove ? (
+        <View>
+          <Text style={{ fontSize: 20 }}>{votedMove}</Text>
+          <Button title='RESTART' onPress={() => socket.emit('restart')} />
+        </View>
+      ) : (
+        <View>
+          {moves && !mostFrequent && moves.map((move, index) => (
+            <View key={index}>
+              <Text style={{ fontSize: 20 }}>Player: {move.player}</Text>
+              <Text style={{ fontSize: 20 }}>Move: {move.move}</Text>
+            </View>
+          ))}
+          {votingLocked && mostFrequent ? mostFrequent.map((item, index) => (
+            <View key={index}>
+              <Text style={{ fontSize: 20 }}>Suggested move</Text>
+              <Text style={{ fontSize: 20 }}>{item.move}</Text>
+              {mostFrequent.length > 1 && 
+                <>
+                  <Button title='VOTE' onPress={() => voteMove(index)} />
+                  <Text style={{ fontSize: 20 }}>{item.numberOfVotes}</Text>
+                </>
               }
-            {/* {votingLocked && teamInfo && castVote && teamInfo.side === "White" && whiteTeamVoted && !onlyWhiteMove &&
+            </View>
+          )) : null}
+          {teamInfo && !castVote &&
+            <>
+              <Text style={{ fontSize: 20 }}>Player: {teamInfo.player}</Text>
+              <Text style={{ fontSize: 20 }}>Side: {teamInfo.side}</Text>
+              <Button title='SEND ROCK' onPress={sendRock} />
+              <Button title='SEND SCISSORS' onPress={sendScissors} />
+              <Button title='SEND PAPER' onPress={sendPaper} />
+            </>
+          }
+          {/* {votingLocked && teamInfo && castVote && teamInfo.side === "White" && whiteTeamVoted && !onlyWhiteMove &&
               
                 <Button style={styles.button} title='GET MOST FREQUENT' onPress={getMostFrequent} />
               } 
@@ -219,17 +238,20 @@ const App = () => {
               
                 <Button style={styles.button} title='GET MOST FREQUENT' onPress={getMostFrequent} />
               } */}
-            {!teamInfo && queueLength < queueMax &&
-              <>
-                <Text style={{ fontSize: 20 }}>Queue {queueLength}/{queueMax}</Text>
-                <Button style={styles.button} title={title} onPress={handleQueue} />
-              </>
-              }
-          </View>
-        }
-      </View>
-  );
+          {!teamInfo && queueLength < queueMax &&
+            <>
+              <Text style={{ fontSize: 20 }}>Queue {queueLength}/{queueMax}</Text>
+              <Button title={title} onPress={handleQueue} />
+            </>
+          }
+        </View>
+      )}
+    </View>
+  </GestureHandlerRootView>
+);
 };
+
+
 
 const styles = StyleSheet.create({
   button: {
