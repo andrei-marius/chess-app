@@ -7,36 +7,39 @@ const server = createServer(app);
 const io = new Server(server);
 
 let queueLength = 0;
-let queueMax = 4
-let blackArr = [];
-let whiteArr = [];
-let finalArr = []
-let whiteFinalMove = []
-let blackFinalMove = []
+let queueMax = 3
 let whitePlayers = []
 let blackPlayers = []
-let whiteVotes = 0
-let blackVotes = 0
+let suggestedMoves = []
+let votes = 0
+let finalMove
+let turn = 'White'
+let sentOnce = false
 
 function mostFrequentPropertyValues(array) {
-  // Extract values of the specified property from the array of objects
-  const propValues = array.map(obj => obj['move']);
-
-  // Count the frequency of each property value
-  const frequencyMap = propValues.reduce((acc, val) => {
-    acc[val] = (acc[val] || 0) + 1;
+  // Count the frequency of each move object
+  const frequencyMap = array.reduce((acc, obj) => {
+    const moveString = JSON.stringify(obj.move);
+    acc[moveString] = (acc[moveString] || 0) + 1;
     return acc;
   }, {});
 
   // Find the highest frequency
   const maxFrequency = Math.max(...Object.values(frequencyMap));
 
-  // Find the property values with the highest frequency
-  const mostFrequentValues = Object.keys(frequencyMap)
-    .filter(key => frequencyMap[key] === maxFrequency)
-    .map(move => ({ move, numberOfVotes: 0 }));
+  // Find the move objects with the highest frequency
+  const mostFrequentMoves = Object.keys(frequencyMap).filter(
+    key => frequencyMap[key] === maxFrequency
+  );
 
-  return mostFrequentValues;
+  // Extract the move objects and add the numberOfVotes property
+  const moveObjectsWithVotes = mostFrequentMoves.map(moveString => {
+    const move = JSON.parse(moveString);
+    const { fen, side } = array.find(obj => JSON.stringify(obj.move) === moveString);
+    return { move, side, numberOfVotes: 0, fen };
+  });
+
+  return moveObjectsWithVotes;
 }
 
 // Shuffle function using Fisher-Yates algorithm
@@ -47,43 +50,26 @@ function shuffleArray(array) {
   }
   return array;
 }
+
 function arrLengthCheck (array1,array2){
 return array1.length === array2.length ? true : false;
 }
 
-  
-
-  function determineWinner(team1, team2) {
-    console.log('team 1', team1)
-    console.log('team 2', team2)
-    const moves = { rock: "scissors", paper: "rock", scissors: "paper" };
-    // const moves2 = [ "rock", "paper","scissors"];
-
-    // if (team1.move || !(team2.move in moves2)) return "Invalid move!";
-    
-    if (team1.move === team2.move) return "It's a tie!";
-    
-    return moves[team1.move] === team2.move ? `${team1.side} with ${team1.move} won against ${team2.side} with ${team2.move}` 
-    : `${team2.side} with ${team2.move} won against ${team1.side} with ${team1.move}`;
-  }
+function handleTurnChange(io) {
+  turn = turn === 'White' ? 'Black' : 'White';
+  io.emit('turnChange', turn);
+}
 
 io.on('connection', (socket) => {
-  console.log(socket.id, 'connected')
+  console.log(socket.id, 'connected')    
 
-  socket.on('restart', () => {
-    queueLength = 0;
-    blackArr = [];
-    whiteArr = [];
-    whiteFinalMove = []
-    blackFinalMove = []
-    io.emit('restartGame')
-  })
+  socket.emit('turnChange', turn);
 
   socket.on('joinQueue', () => {
     if (queueLength < queueMax) {
       queueLength++;
       io.emit('updateQueue', queueLength)
-      console.log(socket.id, 'player joined');
+      // console.log(socket.id, 'player joined');
     }
 
     if (queueLength === queueMax) {
@@ -110,6 +96,9 @@ io.on('connection', (socket) => {
         player.join('Black');
         player.emit('assignTeam', { player: player.id, side: 'Black' });
       });
+
+      console.log('white team:', whitePlayers.length)
+      console.log('black team:', blackPlayers.length)
     }
   });
 
@@ -117,113 +106,89 @@ io.on('connection', (socket) => {
     if (queueLength > 0) {
       queueLength--;
       io.emit('updateQueue', queueLength)
-      console.log(socket.id, 'player cancelled');
+      // console.log(socket.id, 'player cancelled');
     }
   })
 
   socket.on('sendMove', (data) => {
-    
-    if (data.side === 'Black') {
-      blackArr.push(data)
-      console.log(arrLengthCheck(blackArr, blackPlayers))
-      console.log(blackPlayers.length)
+    suggestedMoves.push(data)
 
-      console.log(blackArr.length)
+    if (turn === 'Black') {
+      if (blackPlayers.length === 1 && arrLengthCheck(blackPlayers, suggestedMoves)) {
+        io.emit("receiveFinalMove", suggestedMoves[0])
+        handleTurnChange(io)
+      }
+      
+      if (blackPlayers.length > 1) {
+        io.to(data.side).emit("receiveMoves", suggestedMoves)
 
-        if (arrLengthCheck(blackArr, blackPlayers)){
-          console.log("all black team voted")
-          io.to(data.side).emit('blackTeamAllVoted', blackArr)
+        if (mostFrequentPropertyValues(suggestedMoves).length === 1) {
+          io.emit("receiveFinalMove", suggestedMoves[0])
+          handleTurnChange(io)
+        } else {
+          io.to(data.side).emit('allTeamVoted', suggestedMoves)
         }
-        if (arrLengthCheck(blackArr, blackPlayers) && blackArr.length===1){
-          io.to(data.side).emit('receiveOnlyBlackMove', data)
-          console.log("only one on black")
-          io.to(data.side).emit("onlyTwoFinalMoves", blackArr)
-        } 
-      io.to(data.side).emit("receiveMoves", blackArr)
+      }
     }
     
-    if (data.side === 'White') {
-      whiteArr.push(data)
-      console.log(arrLengthCheck(whiteArr, whitePlayers))
-      console.log(whitePlayers.length)
-      console.log(whiteArr.length)
-        if (arrLengthCheck(whiteArr, whitePlayers)){
-          console.log("all white team voted")
-          io.to(data.side).emit('whiteTeamAllVoted', whiteArr)
-        } if (arrLengthCheck(whiteArr, whitePlayers) && whiteArr.length===1){
-          io.to(data.side).emit('receiveOnlyWhiteMove', data)
-          console.log("only one on white")
-          io.to(data.side).emit("onlyTwoFinalMoves", whiteArr) 
-          // tjek om det virker at køre den igennem clienten hvis data bliver sendt med derhen, og så tilbage igen til onlyTwoFinalMoves
-        } 
-        io.to(data.side).emit("receiveMoves", whiteArr)}
-    console.log(blackArr)
-    console.log(whiteArr)
+    if (turn === 'White') {
+      if (whitePlayers.length === 1 && arrLengthCheck(whitePlayers, suggestedMoves)) {
+        io.emit("receiveFinalMove", suggestedMoves[0])
+        handleTurnChange(io)
+      }
+      
+      if (whitePlayers.length > 1) {
+        io.to(data.side).emit("receiveMoves", suggestedMoves)
+
+        if (arrLengthCheck(whitePlayers, suggestedMoves)) {
+          if (mostFrequentPropertyValues(suggestedMoves).length === 1) {
+            io.emit("receiveFinalMove", suggestedMoves[0])
+            handleTurnChange(io)
+          } else {
+            io.to(data.side).emit('allTeamVoted', suggestedMoves)
+          }
+        }
+      }
+    }
   })
 
   socket.on('getMostFrequent', (data) => {
-    console.log("getMostFrequent ", data)
-
-    // if (data.side === 'White' && mostFrequentPropertyValues(data).length===1){
-    // io.to(data.side).emit("receiveOnlyWhiteMove", mostFrequentPropertyValues(data))
-    // } else if (data.side === 'Black' && mostFrequentPropertyValues(data).length===1){
-    // io.to(data.side).emit("receiveOnlyBlackMove", mostFrequentPropertyValues(data))
-    // } 
-    console.log(mostFrequentPropertyValues(data))
     io.to(data[0].side).emit("receiveMostFrequent", mostFrequentPropertyValues(data));
   })
 
   socket.on('voteMove', (data) => {
-    console.log("move was voted")
-    console.log(data)
     io.to(data.side).emit("receiveVotes", data.mostFrequent)
-    if (data.side === "Black"){
-     blackVotes++
-      if(blackVotes >= blackPlayers.length){
-        
+
+    if (turn === "Black"){
+     votes++
+      if(votes === blackPlayers.length){
         io.to("Black").emit("receiveFinalVotes", { side: "Black" , mostFrequent: data.mostFrequent} );
       }
     }
-    if(data.side === "White"){
-      whiteVotes++
-      if(whiteVotes >= whitePlayers.length){
+    
+    if(turn === "White"){
+      votes++
+      if(votes === whitePlayers.length){
         io.to("White").emit("receiveFinalVotes",{ side: "White" , mostFrequent: data.mostFrequent});
       }
     }
-   
   })
 
-  socket.on('sendFinalMoves', data => {
-    console.log('data side', data.side)
-
-    if (whiteFinalMove.length < 1 || blackFinalMove.length < 1) {
-      if (data.side === 'White' && whiteFinalMove.length < 1) {
-        whiteFinalMove.push({ move: data.move, side: 'White'})
-      } else if (data.side === 'Black' && blackFinalMove.length < 1) {
-        blackFinalMove.push({ move: data.move, side: 'Black'})
-      }
-    } else return console.log("how are you here?")
-
-    console.log('black final', blackFinalMove)
-    console.log('white final', whiteFinalMove)
-
-    if (whiteFinalMove.length === 1 && blackFinalMove.length === 1) io.emit("receiveWinner", determineWinner(whiteFinalMove[0], blackFinalMove[0]));
-  })
-
-  socket.on('onlyTwoFinalMoves', data => {
-   console.log("got it ")
-    if (data.side === 'White' && whiteArr.length ===1 && whiteFinalMove < 1) {
-        whiteFinalMove.push({ move: data.move, side: 'White'})
-      } else if (data.side === 'Black' && blackArr.length ===1 && blackFinalMove < 1) {
-        blackFinalMove.push({ move: data.move, side: 'Black'})
-      }
-     else return console.log("how are you here?")
-
-    console.log('black final', blackFinalMove)
-    console.log('white final', whiteFinalMove)
-    if(whiteFinalMove > 0 && blackFinalMove > 0){ 
-      io.emit("receiveWinner", determineWinner(whiteFinalMove, blackFinalMove));
+  socket.on('sendFinalMove', data => {
+    if (!sentOnce) {
+      sentOnce = true
+      io.emit("receiveFinalMove", data)
+      handleTurnChange(io)
     }
+  })
+
+  socket.on('sendReset', () => {
+    suggestedMoves = []
+    votes = 0
+    finalMove = null
+    sentOnce = false
+
+    io.emit('receiveReset')
   })
 
   // socket.on('disconnect', () => {
