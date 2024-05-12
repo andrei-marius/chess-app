@@ -17,7 +17,7 @@ const App = () => {
   const [votingLocked, setVotingLocked] = useState(false);
   const [voted, setVoted] = useState(false);
   const [fenHistory, setFenHistory] = useState(['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1']);
-  const [turn, setTurn] = useState('White');
+  const [turn, setTurn] = useState(null);
   const [suggestedMove, setSuggestedMove] = useState(null);
 
   const queueMax = 3
@@ -86,6 +86,7 @@ const App = () => {
           setVotingLocked(false);
           setVoted(false);
           setSuggestedMove(null);
+          newSocket.emit('resetSentOnce')
         })
 
         newSocket.on('restartGame', () => {
@@ -96,6 +97,10 @@ const App = () => {
       setSocket(newSocket)
     }
   }, [])
+
+  useEffect(() => {
+    console.log(turn)
+  }, [turn])
 
   const handleQueue = () => {
     if (!joined && queueLength < queueMax) {

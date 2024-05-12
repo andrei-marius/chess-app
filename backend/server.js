@@ -56,8 +56,12 @@ return array1.length === array2.length ? true : false;
 }
 
 function handleTurnChange(io) {
-  turn = turn === 'White' ? 'Black' : 'White';
-  io.emit('turnChange', turn);
+  if (!sentOnce) {
+    sentOnce = true
+    turn = turn === 'White' ? 'Black' : 'White';
+    console.log(turn)
+    io.emit('turnChange', turn);
+  }
 }
 
 io.on('connection', (socket) => {
@@ -175,20 +179,20 @@ io.on('connection', (socket) => {
   })
 
   socket.on('sendFinalMove', data => {
-    if (!sentOnce) {
-      sentOnce = true
       io.emit("receiveFinalMove", data)
       handleTurnChange(io)
-    }
   })
 
   socket.on('sendReset', () => {
-    suggestedMoves = []
-    votes = 0
-    finalMove = null
-    sentOnce = false
+      suggestedMoves = []
+      votes = 0
+      finalMove = null
 
-    io.emit('receiveReset')
+      io.emit('receiveReset')
+  })
+
+  socket.on('resetSentOnce', () => {
+      sentOnce = false
   })
 
   // socket.on('disconnect', () => {
