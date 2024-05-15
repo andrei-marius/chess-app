@@ -7,7 +7,7 @@ const server = createServer(app);
 const io = new Server(server);
 
 let queueLength = 0;
-let queueMax = 3
+let queueMax = 4
 let whitePlayers = []
 let blackPlayers = []
 let suggestedMoves = []
@@ -124,13 +124,15 @@ io.on('connection', (socket) => {
       }
       
       if (blackPlayers.length > 1) {
-        io.to(data.side).emit("receiveMoves", suggestedMoves)
+        io.to(turn).emit("receiveMoves", suggestedMoves)
 
-        if (mostFrequentPropertyValues(suggestedMoves).length === 1) {
-          io.emit("receiveFinalMove", suggestedMoves[0])
-          handleTurnChange(io)
-        } else {
-          io.to(data.side).emit('allTeamVoted', suggestedMoves)
+        if (arrLengthCheck(blackPlayers, suggestedMoves)) {
+          if (mostFrequentPropertyValues(suggestedMoves).length === 1) {
+            io.emit("receiveFinalMove", suggestedMoves[0])
+            handleTurnChange(io)
+          } else {
+            io.to(turn).emit('allTeamVoted', suggestedMoves)
+          }
         }
       }
     }
@@ -142,14 +144,14 @@ io.on('connection', (socket) => {
       }
       
       if (whitePlayers.length > 1) {
-        io.to(data.side).emit("receiveMoves", suggestedMoves)
+        io.to(turn).emit("receiveMoves", suggestedMoves)
 
         if (arrLengthCheck(whitePlayers, suggestedMoves)) {
           if (mostFrequentPropertyValues(suggestedMoves).length === 1) {
             io.emit("receiveFinalMove", suggestedMoves[0])
             handleTurnChange(io)
           } else {
-            io.to(data.side).emit('allTeamVoted', suggestedMoves)
+            io.to(turn).emit('allTeamVoted', suggestedMoves)
           }
         }
       }
@@ -157,11 +159,11 @@ io.on('connection', (socket) => {
   })
 
   socket.on('getMostFrequent', (data) => {
-    io.to(data[0].side).emit("receiveMostFrequent", mostFrequentPropertyValues(data));
+    io.to(turn).emit("receiveMostFrequent", mostFrequentPropertyValues(data));
   })
 
   socket.on('voteMove', (data) => {
-    io.to(data.side).emit("receiveVotes", data.mostFrequent)
+    io.to(turn).emit("receiveVotes", data.mostFrequent)
 
     if (turn === "Black"){
      votes++

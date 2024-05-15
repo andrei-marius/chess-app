@@ -20,13 +20,13 @@ const App = () => {
   const [turn, setTurn] = useState(null);
   const [suggestedMove, setSuggestedMove] = useState(null);
 
-  const queueMax = 3
+  const queueMax = 4
 
   const chessboardRef = useRef(null);
 
   useEffect(() => {
     if (!socket) {
-      const newSocket = io('http://192.168.1.169:3000');
+      const newSocket = io('http://192.168.77.33:3000');
   
       newSocket.on('connect', () => {
         console.log(newSocket.id, 'connected');
