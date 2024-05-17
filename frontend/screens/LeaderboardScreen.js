@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet } from 'react-native';
 import { firestore } from '../firebase';
-import { collection, getDocs } from '../firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 
 const LeaderboardScreen = () => {
   const [leaderboard, setLeaderboard] = useState([]);

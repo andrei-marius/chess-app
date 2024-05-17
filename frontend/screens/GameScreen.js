@@ -3,7 +3,7 @@ import { View, Text, Button, StyleSheet } from 'react-native';
 import io from 'socket.io-client';
 import Chessboard from 'react-native-chessboard';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { collection, addDoc } from '../firebase/firestore';
+import { collection, addDoc } from 'firebase/firestore';
 import { firestore, auth } from '../firebase';
 
 
