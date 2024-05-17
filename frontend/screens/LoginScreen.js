@@ -1,7 +1,7 @@
-// src/screens/LoginScreen.js
 import React, { useState } from 'react';
-import { View, TextInput, Button, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
 import { auth } from '../firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -9,31 +9,34 @@ const LoginScreen = ({ navigation }) => {
 
   const handleLogin = async () => {
     try {
-      await auth.signInWithEmailAndPassword(email, password);
-      console.log("User logged in");
-      navigation.navigate('Leaderboard');
+      await signInWithEmailAndPassword(auth, email, password);
+      console.log('User signed in successfully!');
     } catch (error) {
-      console.error("Error logging in: ", error);
+      console.error('Authentication error:', error.message);
     }
   };
 
   return (
     <View style={styles.container}>
+      <Text style={styles.title}>Sign In</Text>
       <TextInput
         style={styles.input}
-        placeholder="Email"
         value={email}
         onChangeText={setEmail}
+        placeholder="Email"
+        autoCapitalize="none"
       />
       <TextInput
         style={styles.input}
-        placeholder="Password"
         value={password}
         onChangeText={setPassword}
+        placeholder="Password"
         secureTextEntry
       />
-      <Button title="Login" onPress={handleLogin} />
-      <Button title="Signup" onPress={() => navigation.navigate('Signup')} />
+      <Button title="Sign In" onPress={handleLogin} color="#3498db" />
+      <Text style={styles.toggleText} onPress={() => navigation.navigate('Signup')}>
+        Need an account? Sign Up
+      </Text>
     </View>
   );
 };
@@ -42,14 +45,28 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
     padding: 16,
+    backgroundColor: '#f0f0f0',
+  },
+  title: {
+    fontSize: 24,
+    marginBottom: 16,
+    textAlign: 'center',
   },
   input: {
     height: 40,
-    borderColor: 'gray',
+    borderColor: '#ddd',
     borderWidth: 1,
-    marginBottom: 12,
-    paddingHorizontal: 8,
+    marginBottom: 16,
+    padding: 8,
+    borderRadius: 4,
+    width: '80%',
+  },
+  toggleText: {
+    color: '#3498db',
+    textAlign: 'center',
+    marginTop: 20,
   },
 });
 
