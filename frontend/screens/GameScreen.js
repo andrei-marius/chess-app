@@ -3,6 +3,9 @@ import { View, Text, Button, StyleSheet } from 'react-native';
 import io from 'socket.io-client';
 import Chessboard from 'react-native-chessboard';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { collection, addDoc } from '../firebase/firestore';
+import { firestore, auth } from '../firebase';
+
 
 const GameScreen  = () => {
   const [message, setMessage] = useState('');
@@ -19,6 +22,7 @@ const GameScreen  = () => {
   const [fenHistory, setFenHistory] = useState(['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1']);
   const [turn, setTurn] = useState(null);
   const [suggestedMove, setSuggestedMove] = useState(null);
+  const [gameOver, setGameOver] = useState(false);
 
   const queueMax = 2
 
@@ -181,6 +185,52 @@ const GameScreen  = () => {
     };
   }
 
+  const addGameResult = async (result) => {
+    try {
+      await addDoc(collection(firestore, 'leaderboard'), {
+        username: result.username,
+        score: result.score,
+        date: new Date()
+      });
+      console.log('Game result added to leaderboard!');
+    } catch (error) {
+      console.error('Error adding game result: ', error);
+    }
+  };
+
+  //Win: 3 points Draw: 1 point Loss: 0 points
+
+  const handleGameEnd = (outcome) => {
+    const user = auth.currentUser;
+    let score = 0;
+
+    if (outcome.in_checkmate && outcome.turn === 'white') {
+      score = teamInfo.side === 'white' ? 3 : 0;
+    } else if (outcome.in_checkmate && outcome.turn === 'black') {
+      score = teamInfo.side === 'black' ? 3 : 0;
+    } else if (outcome.in_draw || outcome.in_stalemate || outcome.in_threefold_repetition || outcome.insufficient_material) {
+      score = 1;
+    } else {
+      score = 0;
+    }
+
+    const gameResult = {
+      username: user.displayName || user.email,
+      score: score
+    };
+    addGameResult(gameResult);
+    setGameOver(true); 
+  };
+
+  const onMoveEnd = ({ in_checkmate, in_draw, in_stalemate, in_threefold_repetition, insufficient_material, game_over, turn }) => {
+    if (in_checkmate || in_draw || in_stalemate || in_threefold_repetition || insufficient_material || game_over) {
+      handleGameEnd({ in_checkmate, in_draw, in_stalemate, in_threefold_repetition, insufficient_material, turn });
+    }
+  };
+
+
+  
+
   return (
     <GestureHandlerRootView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
       {!teamInfo && queueLength < queueMax ? (
@@ -228,6 +278,7 @@ const GameScreen  = () => {
               sendMove(latestMove, state.fen)
               setSuggestedMove(latestMove)
             }}
+            onMoveEnd={onMoveEnd}
           />
         </>
       )}

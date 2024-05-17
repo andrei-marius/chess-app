@@ -1,16 +1,28 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
-import { auth } from '../firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth, firestore } from '../firebase';
+import { createUserWithEmailAndPassword } from '../firebase/auth';
+import { doc, setDoc } from '../firebase/firestore';
 
 const SignupScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
 
   const handleSignup = async () => {
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      console.log('User signed up successfully!');
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      
+      // Store user profile in Firestore
+      await setDoc(doc(firestore, 'users', user.uid), {
+        username: username,
+        email: email,
+        createdAt: new Date()
+      });
+
+      console.log('User signed up and profile created successfully!');
+      navigation.navigate('Game'); 
     } catch (error) {
       console.error('Authentication error:', error.message);
     }
@@ -19,6 +31,12 @@ const SignupScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Sign Up</Text>
+      <TextInput
+        style={styles.input}
+        value={username}
+        onChangeText={setUsername}
+        placeholder="Username"
+      />
       <TextInput
         style={styles.input}
         value={email}

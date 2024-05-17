@@ -1,31 +1,31 @@
-// src/screens/LeaderboardScreen.js
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
-import { database } from '../firebase';
+import React, { useEffect, useState } from 'react';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { firestore } from '../firebase';
+import { collection, getDocs } from '../firebase/firestore';
 
 const LeaderboardScreen = () => {
-  const [scores, setScores] = useState([]);
+  const [leaderboard, setLeaderboard] = useState([]);
 
   useEffect(() => {
-    const scoresRef = database.ref('scores');
-    scoresRef.on('value', (snapshot) => {
-      const data = snapshot.val();
-      const scoresArray = Object.keys(data).map((key) => ({
-        id: key,
-        ...data[key]
-      }));
-      setScores(scoresArray);
-    });
+    const fetchLeaderboard = async () => {
+      const querySnapshot = await getDocs(collection(firestore, 'leaderboard'));
+      const leaderboardData = querySnapshot.docs.map(doc => doc.data());
+      setLeaderboard(leaderboardData);
+    };
+
+    fetchLeaderboard();
   }, []);
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Leaderboard</Text>
       <FlatList
-        data={scores}
-        keyExtractor={(item) => item.id}
+        data={leaderboard}
+        keyExtractor={(item, index) => index.toString()}
         renderItem={({ item }) => (
-          <Text style={styles.item}>{item.username}: {item.points}</Text>
+          <View style={styles.item}>
+            <Text>{item.username}: {item.score}</Text>
+          </View>
         )}
       />
     </View>
@@ -35,17 +35,18 @@ const LeaderboardScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
     padding: 16,
+    backgroundColor: '#f0f0f0',
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 12,
+    marginBottom: 16,
+    textAlign: 'center',
   },
   item: {
-    fontSize: 18,
-    marginBottom: 8,
+    padding: 8,
+    borderBottomColor: '#ddd',
+    borderBottomWidth: 1,
   },
 });
 
