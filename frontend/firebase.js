@@ -1,6 +1,6 @@
-import firebase from 'firebase/app';
-import 'firebase/auth';
-import 'firebase/database';  // If using Realtime Database
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getDatabase } from "firebase/database";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBsVakZ09gvMzKnZ5_sgWuIjtgaOSPUn_g",
@@ -13,9 +13,8 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
-}
+const app = initializeApp(firebaseConfig);
 
-export const auth = firebase.auth();
-export const database = firebase.database();
+export const db = getDatabase(app);
+
+export const auth = getAuth(app);
