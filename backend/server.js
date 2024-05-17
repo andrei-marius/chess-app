@@ -7,7 +7,7 @@ const server = createServer(app);
 const io = new Server(server);
 
 let queueLength = 0;
-let queueMax = 4
+let queueMax = 2
 let whitePlayers = []
 let blackPlayers = []
 let suggestedMoves = []
