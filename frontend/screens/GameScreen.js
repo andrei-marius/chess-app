@@ -223,6 +223,7 @@ const GameScreen  = () => {
   };
 
   const onMoveEnd = ({ in_checkmate, in_draw, in_stalemate, in_threefold_repetition, insufficient_material, game_over, turn }) => {
+    console.log('Game end conditions:', { in_checkmate, in_draw, in_stalemate, in_threefold_repetition, insufficient_material, game_over, turn });
     if (in_checkmate || in_draw || in_stalemate || in_threefold_repetition || insufficient_material || game_over) {
       handleGameEnd({ in_checkmate, in_draw, in_stalemate, in_threefold_repetition, insufficient_material, turn });
     }

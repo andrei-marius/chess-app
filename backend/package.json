@@ -13,6 +13,7 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.19.2",
+    "react-native-dotenv": "^3.4.11",
     "socket.io": "^4.7.5"
   },
   "devDependencies": {
