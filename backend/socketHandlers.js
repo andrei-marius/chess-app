@@ -12,6 +12,10 @@ import {
     mostFrequentPropertyValues,
     arrLengthCheck
   } from './utils.js';
+
+  let queueLength = 0;
+  let votes = 0;
+  let turn = 'white';
   
   export function initializeSocketHandlers(io) {
     io.on('connection', (socket) => {

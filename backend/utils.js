@@ -1,10 +1,10 @@
-export let queueLength = 0;
+//export let queueLength = 0;
 export const queueMax = 1;
 export const whitePlayers = [];
 export const blackPlayers = [];
 export const suggestedMoves = [];
-export let votes = 0;
-export let turn = 'white';
+//export let votes = 0;
+//export let turn = 'white';
 export const playersReady = [];
 
 export function mostFrequentPropertyValues(array) {
