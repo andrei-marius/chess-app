@@ -1,10 +1,82 @@
 import express from 'express';
 import { createServer } from 'http';
 import { Server } from "socket.io";
+import admin from 'firebase-admin';
+import serviceAccount from './serviceAccountKey.json' assert { type: "json" };
+
 
 const app = express();
 const server = createServer(app);
 const io = new Server(server);
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
+const db = admin.firestore();
+const auth = admin.auth();
+
+//middleware to parse json bodies
+app.use(express.json()); 
+
+//signup endpoint
+app.post('/signup', async (req, res) => {
+  const { email, password, username } = req.body;
+  try {
+    const userRecord = await auth.createUser({
+      email,
+      password,
+    });
+    await db.collection('users').doc(userRecord.uid).set({
+      username,
+      email,
+      createdAt: new Date(),
+    });
+    const token = await auth.createCustomToken(userRecord.uid);
+    res.status(201).json({ token, message: 'User created successfully' });
+  } catch (error) {
+    res.status(400).json({ error: `Error creating user: ${error.message}` });
+  }
+});
+
+
+//login endpoint
+app.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const user = await auth.getUserByEmail(email);
+    const token = await auth.createCustomToken(user.uid);
+    res.status(200).json({ token });
+  } catch (error) {
+    res.status(400).json({ error: `Error logging in: ${error.message}` });
+  }
+});
+
+
+//verifyToken endpoint
+app.post('/verifyToken', async (req, res) => {
+  const token = req.headers.authorization?.split('Bearer ')[1];
+  try {
+    const decodedToken = await auth.verifyIdToken(token);
+    res.status(200).send(decodedToken);
+  } catch (error) {
+    res.status(401).send('Unauthorized');
+  }
+});
+
+
+//middleware to secure endpoints
+const authenticate = async (req, res, next) => {
+  const token = req.headers.authorization?.split('Bearer ')[1];
+  try {
+    const decodedToken = await auth.verifyIdToken(token);
+    req.user = decodedToken;
+    next();
+  } catch (error) {
+    res.status(401).send('Unauthorized');
+  }
+};
+
+app.use(authenticate);
 
 let queueLength = 0;
 let queueMax = 2

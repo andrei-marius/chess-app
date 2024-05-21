@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { auth } from './firebase';
 import LoginScreen from './screens/LoginScreen';
 import SignupScreen from './screens/SignupScreen';
 import LeaderboardScreen from './screens/LeaderboardScreen';
-import GameScreen from './screens/GameScreen'; 
+import GameScreen from './screens/GameScreen';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Stack = createStackNavigator();
 
@@ -13,11 +13,26 @@ export default function App() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setUser(user);
-    });
+    const checkUserLoggedIn = async () => {
+      const token = await AsyncStorage.getItem('token');
+      if (token) {
+        const response = await fetch('http://192.168.0.19:3000/verifyToken', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+        } else {
+          await AsyncStorage.removeItem('token');
+        }
+      }
+    };
 
-    return () => unsubscribe();
+    checkUserLoggedIn();
   }, []);
 
   return (

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
-import { auth } from '../firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -9,8 +8,19 @@ const LoginScreen = ({ navigation }) => {
 
   const handleLogin = async () => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      console.log('User signed in successfully!');
+      const response = await fetch('http://192.168.0.19:3000/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        await AsyncStorage.setItem('token', data.token);
+        console.log('User signed in successfully!');
+        navigation.navigate("Game"); 
+      } else {
+        console.error('Authentication error:', data.message);
+      }
     } catch (error) {
       console.error('Authentication error:', error.message);
     }

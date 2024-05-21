@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
-import { auth, firestore } from '../firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SignupScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -11,18 +9,19 @@ const SignupScreen = ({ navigation }) => {
 
   const handleSignup = async () => {
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      
-      // Store user profile in Firestore
-      await setDoc(doc(firestore, 'users', user.uid), {
-        username: username,
-        email: email,
-        createdAt: new Date()
+      const response = await fetch('http://192.168.0.19:3000/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, username }),
       });
-
-      console.log('User signed up and profile created successfully!');
-      navigation.navigate('Game'); 
+      const data = await response.json();
+      if (response.ok) {
+        console.log('User signed up and profile created successfully!');
+        await AsyncStorage.setItem('token', data.token);
+        navigation.navigate('Game'); 
+      } else {
+        console.error('Authentication error:', data.message);
+      }
     } catch (error) {
       console.error('Authentication error:', error.message);
     }
