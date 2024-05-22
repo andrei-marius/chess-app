@@ -6,9 +6,13 @@ const LeaderboardScreen = () => {
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
-      const querySnapshot = await getDocs(collection(firestore, 'leaderboard'));
-      const leaderboardData = querySnapshot.docs.map(doc => doc.data());
-      setLeaderboard(leaderboardData);
+      try {
+        const response = await fetch('http://192.168.0.19:3000/leaderboard');
+        const data = await response.json();
+        setLeaderboard(data);
+      } catch (error) {
+        console.error('Error fetching leaderboard:', error);
+      }
     };
 
     fetchLeaderboard();

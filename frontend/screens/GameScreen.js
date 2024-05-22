@@ -3,10 +3,11 @@ import { View, Text, Button, StyleSheet } from 'react-native';
 import io from 'socket.io-client';
 import Chessboard from 'react-native-chessboard';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
 
 
 
-const GameScreen  = () => {
+const GameScreen  = (navigation) => {
   const [message, setMessage] = useState('');
   const [joined, setJoined] = useState(false);
   const [queueLength, setQueueLength] = useState(0);
@@ -186,14 +187,23 @@ const GameScreen  = () => {
 
   const addGameResult = async (result) => {
     try {
-      await addDoc(collection(firestore, 'leaderboard'), {
-        username: result.username,
-        score: result.score,
-        date: new Date()
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch('http://192.168.0.19:3000/addGameResult', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(result),
       });
-      console.log('Game result added to leaderboard!');
+      if (response.ok) {
+        console.log('Game result added to leaderboard!');
+      } else {
+        const errorData = await response.json();
+        console.error('Error adding game result:', errorData.error);
+      }
     } catch (error) {
-      console.error('Error adding game result: ', error);
+      console.error('Error adding game result:', error);
     }
   };
 

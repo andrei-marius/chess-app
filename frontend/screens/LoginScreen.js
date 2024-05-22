@@ -13,18 +13,24 @@ const LoginScreen = ({ navigation }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-      const data = await response.json();
-      if (response.ok) {
-        await AsyncStorage.setItem('token', data.token);
-        console.log('User signed in successfully!');
-        navigation.navigate("Game"); 
-      } else {
-        console.error('Authentication error:', data.message);
+      const text = await response.text();
+      try {
+        const data = JSON.parse(text);
+        if (response.ok) {
+          await AsyncStorage.setItem('token', data.token);
+          console.log('User signed in successfully!');
+          navigation.navigate('Game'); 
+        } else {
+          console.error('Authentication error:', data.message);
+        }
+      } catch (jsonError) {
+        console.error('Error parsing JSON:', jsonError, 'Response text:', text);
       }
     } catch (error) {
       console.error('Authentication error:', error.message);
     }
   };
+  
 
   return (
     <View style={styles.container}>
