@@ -23,15 +23,15 @@ const Chess = () => {
             setPlayersReady(true)
         })
 
-        socket.on('receiveFinalMove', (data) => {
+        socket.on('receiveFinalMove', (data, turn) => {
             // console.log('Received final move:', data);
             chessboardRef.current.resetBoard(data.fen)
+            setTurn(turn)
             setFinalMove(data);
             setFenHistory(oldArray => [...oldArray, data.fen])
         });
         
-        socket.on('receiveResetAndTurn', (data) => {
-            setTurn(data)
+        socket.on('resetMove', () => {
             setSuggestedMove(null)
             setFinalMove(null)
         });

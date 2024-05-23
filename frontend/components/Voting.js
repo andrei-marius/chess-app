@@ -27,7 +27,7 @@ const Voting = () => {
             setVoted(false)
         });
 
-        socket.on('receiveResetAndTurn', () => {
+        socket.on('resetMove', () => {
             setVotingLocked(true)
             setVoted(false)
             setMostFrequent(null)

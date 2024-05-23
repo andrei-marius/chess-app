@@ -17,7 +17,7 @@ const SuggestedMoves = () => {
             socket.emit('getMostFrequent', data)
         });
 
-        socket.on('receiveResetAndTurn', () => {
+        socket.on('resetMove', () => {
             setSuggestedMoves(null)
         });
     }, [])
