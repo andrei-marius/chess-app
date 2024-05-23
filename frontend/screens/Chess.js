@@ -37,6 +37,7 @@ const Chess = () => {
             setTurn(data)
             setSuggestedMove(null)
             setFinalMove(null)
+            setGameOver(false)
         });
     }, [])
 
@@ -81,7 +82,8 @@ const Chess = () => {
 
         const gameResult = {
             username: user.name || user.email,
-            score: score
+            score: score,
+            result: outcome.in_checkmate ? (side === outcome.turn ? 'win' : 'lose') : 'draw'
         };
         addGameResult(gameResult);
         setGameOver(true); 
@@ -152,26 +154,37 @@ const Chess = () => {
 
     return (
         <GestureHandlerRootView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            {playersReady ? <>
-            <Text>Player: {socket.id}</Text>
-            <Text>Side: {side}</Text>
-            <Text>Turn: {turn}</Text>
-            <SuggestedMoves />
-            <Voting />
-            <Chessboard
-                gestureEnabled={side && side === turn && !suggestedMove}
-                ref={chessboardRef}
-                onMove={({ state }) => {
-                    const latestMove = getLatestMove(fenHistory.slice(-1)[0], state.fen)
-                    sendMove(latestMove, state.fen)
-                    setSuggestedMove(latestMove)
-                    onMoveEnd({ ...state, turn });
-                }}
-            />
-            </>
-            : <Text>waiting for everyone</Text>}
+            {playersReady ? (
+                gameOver ? (
+                    <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+                        <Text>Game Over</Text>
+                        <Button title="Back to Queue" onPress={() => navigation.navigate('Queue')} />
+                        <Button title="View Leaderboard" onPress={() => navigation.navigate('Leaderboard')} />
+                    </View>
+                ) : (
+                    <>
+                        <Text>Player: {socket.id}</Text>
+                        <Text>Side: {side}</Text>
+                        <Text>Turn: {turn}</Text>
+                        <SuggestedMoves />
+                        <Voting />
+                        <Chessboard
+                            gestureEnabled={side && side === turn && !suggestedMove}
+                            ref={chessboardRef}
+                            onMove={({ state }) => {
+                                const latestMove = getLatestMove(fenHistory.slice(-1)[0], state.fen);
+                                sendMove(latestMove, state.fen);
+                                setSuggestedMove(latestMove);
+                                onMoveEnd({ ...state, turn });
+                            }}
+                        />
+                    </>
+                )
+            ) : (
+                <Text>waiting for everyone</Text>
+            )}
         </GestureHandlerRootView>
-    )
-}
+    );
+};
 
 export default Chess;
