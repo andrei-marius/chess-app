@@ -9,7 +9,23 @@ import Queue from "./screens/Queue";
 import Chess from "./screens/Chess";
 import ContextProvider from "./contexts/globalContext";
 
-const Stack = createStackNavigator();
+const AuthStack = createStackNavigator();
+const AppStack = createStackNavigator();
+
+const AuthStackScreen = () => (
+  <AuthStack.Navigator>
+    <AuthStack.Screen name="Login" component={LoginScreen} />
+    <AuthStack.Screen name="Signup" component={SignupScreen} />
+  </AuthStack.Navigator>
+);
+
+const AppStackScreen = () => (
+  <AppStack.Navigator>
+    <AppStack.Screen name="Queue" component={Queue} />
+    <AppStack.Screen name="Chess" component={Chess} />
+    <AppStack.Screen name="Leaderboard" component={LeaderboardScreen} />
+  </AppStack.Navigator>
+);
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -39,22 +55,9 @@ export default function App() {
 
   return (
     <ContextProvider>
-    <NavigationContainer>
-      <Stack.Navigator>
-        {user ? (
-          <>
-            <Stack.Screen name="Queue" component={Queue} />
-            <Stack.Screen name="Chess" component={Chess} />
-            <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
-          </>
-        ) : (
-          <>
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Signup" component={SignupScreen} />
-          </>
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+      <NavigationContainer>
+        {user ? <AppStackScreen /> : <AuthStackScreen />}
+      </NavigationContainer>
     </ContextProvider>
   );
 }
