@@ -4,8 +4,10 @@ import { createStackNavigator } from '@react-navigation/stack';
 import LoginScreen from './screens/LoginScreen';
 import SignupScreen from './screens/SignupScreen';
 import LeaderboardScreen from './screens/LeaderboardScreen';
-import GameScreen from './screens/GameScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Queue from "./screens/Queue";
+import Chess from "./screens/Chess";
+import ContextProvider from "./contexts/globalContext";
 
 const Stack = createStackNavigator();
 
@@ -36,11 +38,13 @@ export default function App() {
   }, []);
 
   return (
+    <ContextProvider>
     <NavigationContainer>
       <Stack.Navigator>
         {user ? (
           <>
-            <Stack.Screen name="Game" component={GameScreen} />
+            <Stack.Screen name="Queue" component={Queue} />
+            <Stack.Screen name="Chess" component={Chess} />
             <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
           </>
         ) : (
@@ -51,5 +55,6 @@ export default function App() {
         )}
       </Stack.Navigator>
     </NavigationContainer>
+    </ContextProvider>
   );
 }

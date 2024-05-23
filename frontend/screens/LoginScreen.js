@@ -19,7 +19,7 @@ const LoginScreen = ({ navigation }) => {
         if (response.ok) {
           await AsyncStorage.setItem('token', data.token);
           console.log('User signed in successfully!');
-          navigation.navigate('Game'); 
+          navigation.navigate('Queue'); 
         } else {
           console.error('Authentication error:', data.message);
         }

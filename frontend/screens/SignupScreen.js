@@ -18,7 +18,7 @@ const SignupScreen = ({ navigation }) => {
       if (response.ok) {
         console.log('User signed up and profile created successfully!');
         await AsyncStorage.setItem('token', data.token);
-        navigation.navigate('Game'); 
+        navigation.navigate('Queue'); 
       } else {
         console.error('Authentication error:', data.message);
       }

@@ -104,14 +104,14 @@ app.get('/leaderboard', async (req, res) => {
 
 
 let queueLength = 0;
-let queueMax = 2
+let queueMax = 3
 let whitePlayers = []
 let blackPlayers = []
 let suggestedMoves = []
 let votes = 0
 let finalMove
-let turn = 'White'
-let sentOnce = false
+let turn = 'white'
+let playersReady = []
 
 function mostFrequentPropertyValues(array) {
   // Count the frequency of each move object
@@ -152,19 +152,17 @@ function arrLengthCheck (array1,array2){
 return array1.length === array2.length ? true : false;
 }
 
-function handleTurnChange(io) {
-  if (!sentOnce) {
-    sentOnce = true
-    turn = turn === 'White' ? 'Black' : 'White';
-    console.log(turn)
-    io.emit('turnChange', turn);
-  }
+function resetAndSwitchTurns() {
+  suggestedMoves = []
+  votes = 0
+  finalMove = null
+  turn = turn === 'white' ? 'black' : 'white'
+
+  io.emit('receiveResetAndTurn', turn)
 }
 
 io.on('connection', (socket) => {
-  console.log(socket.id, 'connected')    
-
-  socket.emit('turnChange', turn);
+  console.log(socket.id, 'connected')
 
   socket.on('joinQueue', () => {
     if (queueLength < queueMax) {
@@ -176,30 +174,30 @@ io.on('connection', (socket) => {
     if (queueLength === queueMax) {
       const players = io.sockets.sockets.values();
       const playerArray = Array.from(players);
-    
+      
       // Shuffle the player array randomly
       const shuffledPlayers = shuffleArray(playerArray);
-    
+      
       // Calculate the midpoint index
       const midpointIndex = Math.ceil(playerArray.length / 2);
-    
+      
       // Divide the shuffled array into two teams
       whitePlayers = shuffledPlayers.slice(0, midpointIndex);
       blackPlayers = shuffledPlayers.slice(midpointIndex);
-    
+      
       // Assign teams and emit events
       whitePlayers.forEach((player) => {
-        player.join('White');
-        player.emit('assignTeam', { player: player.id, side: 'White' });
+        player.join('white');
+        player.emit('receiveAssignTeams', 'white')
       });
-    
+      
       blackPlayers.forEach((player) => {
-        player.join('Black');
-        player.emit('assignTeam', { player: player.id, side: 'Black' });
+        player.join('black');
+        player.emit('receiveAssignTeams', 'black')
       });
-
-      console.log('white team:', whitePlayers.length)
-      console.log('black team:', blackPlayers.length)
+  
+      console.log('white team', whitePlayers.length)
+      console.log('black team', blackPlayers.length)
     }
   });
 
@@ -211,13 +209,21 @@ io.on('connection', (socket) => {
     }
   })
 
+  socket.on('playerReady', (data) => {
+    playersReady.push(data)
+    console.log(playersReady)
+    if (playersReady.length === blackPlayers.length + whitePlayers.length) {
+      io.emit('playersReady')
+    }
+  })
+
   socket.on('sendMove', (data) => {
     suggestedMoves.push(data)
 
-    if (turn === 'Black') {
+    if (turn === 'black') {
       if (blackPlayers.length === 1 && arrLengthCheck(blackPlayers, suggestedMoves)) {
-        io.emit("receiveFinalMove", suggestedMoves[0])
-        handleTurnChange(io)
+        io.emit("receiveFinalMove", suggestedMoves[0]) // send turn also
+        resetAndSwitchTurns()
       }
       
       if (blackPlayers.length > 1) {
@@ -226,29 +232,29 @@ io.on('connection', (socket) => {
         if (arrLengthCheck(blackPlayers, suggestedMoves)) {
           if (mostFrequentPropertyValues(suggestedMoves).length === 1) {
             io.emit("receiveFinalMove", suggestedMoves[0])
-            handleTurnChange(io)
+            resetAndSwitchTurns()
           } else {
-            io.to(turn).emit('allTeamVoted', suggestedMoves)
+            io.to(turn).emit('allTeamMoved', suggestedMoves)
           }
         }
       }
     }
     
-    if (turn === 'White') {
+    if (turn === 'white') {
       if (whitePlayers.length === 1 && arrLengthCheck(whitePlayers, suggestedMoves)) {
         io.emit("receiveFinalMove", suggestedMoves[0])
-        handleTurnChange(io)
+        resetAndSwitchTurns()
       }
       
       if (whitePlayers.length > 1) {
-        io.to(turn).emit("receiveMoves", suggestedMoves)
+        io.to(turn).emit("receiveMoves", suggestedMoves, turn)
 
         if (arrLengthCheck(whitePlayers, suggestedMoves)) {
           if (mostFrequentPropertyValues(suggestedMoves).length === 1) {
             io.emit("receiveFinalMove", suggestedMoves[0])
-            handleTurnChange(io)
+            resetAndSwitchTurns()
           } else {
-            io.to(turn).emit('allTeamVoted', suggestedMoves)
+            io.to(turn).emit('allTeamMoved', suggestedMoves)
           }
         }
       }
@@ -260,47 +266,34 @@ io.on('connection', (socket) => {
   })
 
   socket.on('voteMove', (data) => {
-    io.to(turn).emit("receiveVotes", data.mostFrequent)
+    data.mostFrequent[data.index].numberOfVotes++;
 
-    if (turn === "Black"){
-     votes++
-      if(votes === blackPlayers.length){
-        io.to("Black").emit("receiveFinalVotes", { side: "Black" , mostFrequent: data.mostFrequent} );
-      }
+    io.to(turn).emit("receiveVotes", data.mostFrequent);
+
+    votes++;
+
+    if ((turn === "black" && votes === blackPlayers.length) || (turn === "white" && votes === whitePlayers.length)) {
+        const allEqualVotes = data.mostFrequent.every(move => move.numberOfVotes === data.mostFrequent[0].numberOfVotes);
+
+        if (allEqualVotes) {
+            data.mostFrequent.forEach(move => move.numberOfVotes = 0);
+            io.to(turn).emit("revoteNeeded", "All moves have the same number of votes. Revote required.", data.mostFrequent);
+            votes = 0; 
+        } else {
+            const maxVotesMove = data.mostFrequent.reduce((prev, current) => (prev.numberOfVotes > current.numberOfVotes) ? prev : current);
+            io.emit("receiveFinalMove", maxVotesMove);
+            resetAndSwitchTurns();
+        }
     }
-    
-    if(turn === "White"){
-      votes++
-      if(votes === whitePlayers.length){
-        io.to("White").emit("receiveFinalVotes",{ side: "White" , mostFrequent: data.mostFrequent});
-      }
+});
+
+  socket.on('disconnect', () => {
+    if (queueLength > 0) {
+      queueLength--;
+      io.emit('updateQueue', queueLength)
+      console.log('player disconnected');
     }
-  })
-
-  socket.on('sendFinalMove', data => {
-      io.emit("receiveFinalMove", data)
-      handleTurnChange(io)
-  })
-
-  socket.on('sendReset', () => {
-      suggestedMoves = []
-      votes = 0
-      finalMove = null
-
-      io.emit('receiveReset')
-  })
-
-  socket.on('resetSentOnce', () => {
-      sentOnce = false
-  })
-
-  // socket.on('disconnect', () => {
-  //   if (queueLength > 0) {
-  //     queueLength--;
-  //     io.emit('updateQueue', queueLength)
-  //     console.log('player disconnected');
-  //   }
-  // });
+  });
 });
 
 const port = process.env.PORT || 3000;
