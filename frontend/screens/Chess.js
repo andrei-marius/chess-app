@@ -6,6 +6,8 @@ import socket from "../socketConnection";
 import SuggestedMoves from "../components/SuggestedMoves";
 import Voting from "../components/Voting";
 import { useCustomContext } from "../contexts/globalContext";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import jwtDecode from 'jwt-decode';
 
 const Chess = () => {
     const [suggestedMove, setSuggestedMove] = useState(null)
@@ -15,6 +17,7 @@ const Chess = () => {
     const [playersReady, setPlayersReady] = useState(false);
     const { side } = useCustomContext()
     const chessboardRef = useRef(null);
+    const [gameOver, setGameOver] = useState(false);
 
     useEffect(() => {
         socket.emit('playerReady', socket.id)
@@ -36,6 +39,61 @@ const Chess = () => {
             setFinalMove(null)
         });
     }, [])
+
+    const addGameResult = async (result) => {
+        try {
+          const token = await AsyncStorage.getItem('token');
+          const response = await fetch('http://192.168.0.19:3000/addGameResult', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify(result),
+          });
+          if (response.ok) {
+            console.log('Game result added to leaderboard!');
+          } else {
+            const errorData = await response.json();
+            console.error('Error adding game result:', errorData.error);
+          }
+        } catch (error) {
+          console.error('Error adding game result:', error);
+        }
+      };
+    
+      //Win: 3 points Draw: 1 point Loss: 0 points
+    
+      const handleGameEnd = async (outcome) => {
+        const token = await AsyncStorage.getItem('token');
+        const user = jwtDecode(token);
+        let score = 0;
+
+        if (outcome.in_checkmate && outcome.turn === 'white') {
+            score = side === 'white' ? 3 : 0;
+        } else if (outcome.in_checkmate && outcome.turn === 'black') {
+            score = side === 'black' ? 3 : 0;
+        } else if (outcome.in_draw || outcome.in_stalemate || outcome.in_threefold_repetition || outcome.insufficient_material) {
+            score = 1;
+        } else {
+            score = 0;
+        }
+
+        const gameResult = {
+            username: user.name || user.email,
+            score: score
+        };
+        addGameResult(gameResult);
+        setGameOver(true); 
+    };
+
+    
+      const onMoveEnd = ({ in_checkmate, in_draw, in_stalemate, in_threefold_repetition, insufficient_material, game_over, turn }) => {
+        console.log('Game end conditions:', { in_checkmate, in_draw, in_stalemate, in_threefold_repetition, insufficient_material, game_over, turn });
+        if (in_checkmate || in_draw || in_stalemate || in_threefold_repetition || insufficient_material || game_over) {
+          handleGameEnd({ in_checkmate, in_draw, in_stalemate, in_threefold_repetition, insufficient_material, turn });
+        }
+      };
 
     function getLatestMove(fen1, fen2) {
         if (!fen1 || !fen2) {
@@ -107,6 +165,7 @@ const Chess = () => {
                     const latestMove = getLatestMove(fenHistory.slice(-1)[0], state.fen)
                     sendMove(latestMove, state.fen)
                     setSuggestedMove(latestMove)
+                    onMoveEnd({ ...state, turn });
                 }}
             />
             </>
