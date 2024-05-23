@@ -43,25 +43,25 @@ const Chess = () => {
 
     const addGameResult = async (result) => {
         try {
-          const token = await AsyncStorage.getItem('token');
-          const response = await fetch('http://192.168.0.19:3000/addGameResult', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify(result),
-          });
-          if (response.ok) {
-            console.log('Game result added to leaderboard!');
-          } else {
-            const errorData = await response.json();
-            console.error('Error adding game result:', errorData.error);
-          }
+            const token = await AsyncStorage.getItem('token');
+            const response = await fetch('http://192.168.0.19:3000/addGameResult', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify(result),
+            });
+            if (response.ok) {
+                console.log('Game result added to leaderboard!');
+            } else {
+                const errorData = await response.json();
+                console.error('Error adding game result:', errorData.error);
+            }
         } catch (error) {
-          console.error('Error adding game result:', error);
+            console.error('Error adding game result:', error);
         }
-      };
+    };
     
       //Win: 3 points Draw: 1 point Loss: 0 points
     
@@ -69,33 +69,32 @@ const Chess = () => {
         const token = await AsyncStorage.getItem('token');
         const user = jwtDecode(token);
         let score = 0;
+        let result = 'draw';
 
-        if (outcome.in_checkmate && outcome.turn === 'white') {
-            score = side === 'white' ? 3 : 0;
-        } else if (outcome.in_checkmate && outcome.turn === 'black') {
-            score = side === 'black' ? 3 : 0;
+        if (outcome.in_checkmate) {
+            result = (side === outcome.turn) ? 'win' : 'lose';
+            score = (result === 'win') ? 3 : 0;
         } else if (outcome.in_draw || outcome.in_stalemate || outcome.in_threefold_repetition || outcome.insufficient_material) {
+            result = 'draw';
             score = 1;
-        } else {
-            score = 0;
         }
 
         const gameResult = {
             username: user.name || user.email,
             score: score,
-            result: outcome.in_checkmate ? (side === outcome.turn ? 'win' : 'lose') : 'draw'
+            result: result
         };
         addGameResult(gameResult);
         setGameOver(true); 
     };
 
     
-      const onMoveEnd = ({ in_checkmate, in_draw, in_stalemate, in_threefold_repetition, insufficient_material, game_over, turn }) => {
+    const onMoveEnd = ({ in_checkmate, in_draw, in_stalemate, in_threefold_repetition, insufficient_material, game_over, turn }) => {
         console.log('Game end conditions:', { in_checkmate, in_draw, in_stalemate, in_threefold_repetition, insufficient_material, game_over, turn });
         if (in_checkmate || in_draw || in_stalemate || in_threefold_repetition || insufficient_material || game_over) {
-          handleGameEnd({ in_checkmate, in_draw, in_stalemate, in_threefold_repetition, insufficient_material, turn });
+            handleGameEnd({ in_checkmate, in_draw, in_stalemate, in_threefold_repetition, insufficient_material, turn });
         }
-      };
+    };
 
     function getLatestMove(fen1, fen2) {
         if (!fen1 || !fen2) {
