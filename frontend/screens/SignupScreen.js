@@ -9,7 +9,7 @@ const SignupScreen = ({ navigation }) => {
 
   const handleSignup = async () => {
     try {
-      const response = await fetch('http://192.168.0.19:3000/signup', {
+      const response = await fetch(`http://${process.env.IP_ADDRESS}:3000/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, username }),

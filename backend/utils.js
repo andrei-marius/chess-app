@@ -1,24 +1,20 @@
-//export let queueLength = 0;
-export const queueMax = 1;
-export const whitePlayers = [];
-export const blackPlayers = [];
-export const suggestedMoves = [];
-//export let votes = 0;
-//export let turn = 'white';
-export const playersReady = [];
-
 export function mostFrequentPropertyValues(array) {
+  // Count the frequency of each move object
   const frequencyMap = array.reduce((acc, obj) => {
     const moveString = JSON.stringify(obj.move);
     acc[moveString] = (acc[moveString] || 0) + 1;
     return acc;
   }, {});
 
+  // Find the highest frequency
   const maxFrequency = Math.max(...Object.values(frequencyMap));
+
+  // Find the move objects with the highest frequency
   const mostFrequentMoves = Object.keys(frequencyMap).filter(
     key => frequencyMap[key] === maxFrequency
   );
 
+  // Extract the move objects and add the numberOfVotes property
   const moveObjectsWithVotes = mostFrequentMoves.map(moveString => {
     const move = JSON.parse(moveString);
     const { fen, side } = array.find(obj => JSON.stringify(obj.move) === moveString);
@@ -28,6 +24,7 @@ export function mostFrequentPropertyValues(array) {
   return moveObjectsWithVotes;
 }
 
+// Shuffle function using Fisher-Yates algorithm
 export function shuffleArray(array) {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -36,13 +33,21 @@ export function shuffleArray(array) {
   return array;
 }
 
-export function arrLengthCheck(array1, array2) {
-  return array1.length === array2.length;
+export function arrLengthCheck (array1,array2){
+return array1.length === array2.length ? true : false;
 }
 
-export function resetAndSwitchTurns(io) {
-  suggestedMoves.length = 0;
-  votes = 0;
-  turn = turn === 'white' ? 'black' : 'white';
-  io.emit('receiveResetAndTurn', turn);
+export function resetMoveAndSwitchTurn() {
+  turn = turn === 'white' ? 'black' : 'white'
+  suggestedMoves = []
+  votes = 0
+  finalMove = null
+
+  io.emit('resetMove')
+}
+
+export function resetCountdown() {
+  clearInterval(countdown);
+  countdownTime = countdownTimeStart;
+  io.emit('countdown', countdownTime);
 }

@@ -7,7 +7,7 @@ const LeaderboardScreen = () => {
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
-        const response = await fetch('http://192.168.0.19:3000/leaderboard');
+        const response = await fetch(`http://${process.env.IP_ADDRESS}:3000/leaderboard`);
         const data = await response.json();
         setLeaderboard(data);
       } catch (error) {
