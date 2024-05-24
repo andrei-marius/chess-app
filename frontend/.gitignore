@@ -33,3 +33,6 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+# Ignore service account key file
+serviceAccountKey.json
