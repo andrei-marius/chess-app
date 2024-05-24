@@ -4,10 +4,11 @@ import { Server } from "socket.io";
 import admin from 'firebase-admin';
 import serviceAccount from './serviceAccountKey.json' assert { type: "json" };
 
+import { initializeSocketHandlers } from './socketHandlers.js';
 
 const app = express();
 const server = createServer(app);
-const io = new Server(server)
+const io = new Server(server);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -348,6 +349,7 @@ io.on('connection', (socket) => {
   //   }
   // });
 });
+initializeSocketHandlers(io);
 
 const port = process.env.PORT || 3000;
 
