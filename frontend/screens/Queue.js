@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Text, Button, View } from "react-native";
+import { Text, Button, View, StyleSheet  } from "react-native";
 import socket from "../socketConnection";
 import { useCustomContext } from "../contexts/globalContext";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Queue = ({ navigation }) => {
     const [ queueLength, setQueueLength ] = useState(0)
@@ -59,18 +60,44 @@ const Queue = ({ navigation }) => {
       return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
   };
 
-    return (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-              {msg && <Text>{msg}</Text>}
-              {joined &&
-                <>
-                  <Text>Time left: {formatTime(countdown)}</Text>
-                  <Text>{queueLength} in queue</Text>
-                </>
-              }
-            <Button onPress={handleQueue} title={title}></Button>
-        </View>
-    )
-}
+  const handleLogout = async () => {
+    await AsyncStorage.removeItem('token');
+    navigation.replace('Login');
+  };
+
+  return (
+    <View style={{ flex: 1 }}>
+      <View style={styles.mainContent}>
+        {msg && <Text>{msg}</Text>}
+        {joined &&
+          <>
+            <Text>Time left: {formatTime(countdown)}</Text>
+            <Text>{queueLength} in queue</Text>
+          </>
+        }
+        <Button onPress={handleQueue} title={title}></Button>
+      </View>
+      <View style={styles.navBar}>
+        <Button title="Logout" onPress={handleLogout} />
+      </View>
+    </View>
+);
+};
+
+const styles = StyleSheet.create({
+  mainContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  navBar: {
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#ddd',
+    borderTopWidth: 1,
+    borderTopColor: '#ccc',
+  },
+});
 
 export default Queue;
