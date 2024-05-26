@@ -3,6 +3,7 @@ import { Text, Button, View, StyleSheet  } from "react-native";
 import socket from "../socketConnection";
 import { useCustomContext } from "../contexts/globalContext";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { formatTime } from "../utils";
 
 const Queue = ({ navigation }) => {
     const [ queueLength, setQueueLength ] = useState(0)
@@ -54,17 +55,6 @@ const Queue = ({ navigation }) => {
       }
     }
 
-    const formatTime = (seconds) => {
-      const minutes = Math.floor(seconds / 60);
-      const remainingSeconds = seconds % 60;
-      return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
-  };
-
-  const handleLogout = async () => {
-    await AsyncStorage.removeItem('token');
-    navigation.replace('Login');
-  };
-
   return (
     <View style={{ flex: 1 }}>
       <View style={styles.mainContent}>
@@ -76,9 +66,6 @@ const Queue = ({ navigation }) => {
           </>
         }
         <Button onPress={handleQueue} title={title}></Button>
-      </View>
-      <View style={styles.navBar}>
-        <Button title="Logout" onPress={handleLogout} />
       </View>
     </View>
 );

@@ -5,13 +5,16 @@ export const Context = createContext(null);
 export default function ContextProvider({ children} ) {
 	const [mostFrequent, setMostFrequent] = useState(null)
 	const [side, setSide] = useState(null)
+	const [user, setUser] = useState(null);
 
 	const contextValue = useMemo(() => ({ 
 		mostFrequent,
 		setMostFrequent,
 		side,
-		setSide
-	}), [mostFrequent, setMostFrequent, side, setSide]);
+		setSide,
+		user,
+		setUser,
+	}), [mostFrequent, setMostFrequent, side, setSide, user, setUser]);
 
 	return (
 		<Context.Provider value={contextValue}>

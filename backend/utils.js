@@ -34,20 +34,5 @@ export function shuffleArray(array) {
 }
 
 export function arrLengthCheck (array1,array2){
-return array1.length === array2.length ? true : false;
-}
-
-export function resetMoveAndSwitchTurn() {
-  turn = turn === 'white' ? 'black' : 'white'
-  suggestedMoves = []
-  votes = 0
-  finalMove = null
-
-  io.emit('resetMove')
-}
-
-export function resetCountdown() {
-  clearInterval(countdown);
-  countdownTime = countdownTimeStart;
-  io.emit('countdown', countdownTime);
+  return array1.length === array2.length ? true : false;
 }

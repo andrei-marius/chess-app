@@ -1,9 +1,7 @@
 import {
-  resetMoveAndSwitchTurn,
   shuffleArray,
   mostFrequentPropertyValues,
   arrLengthCheck, 
-  resetCountdown
 } from './utils.js';
 
 let queueLength = 0;
@@ -19,6 +17,21 @@ const countdownTimeStart = 10 // Countdown time in seconds, top var to be change
 let countdownTime = countdownTimeStart // to increment/decrement
 let countdown // for interval
 let playersJoined = []
+
+function resetMoveAndSwitchTurn(io) {
+  turn = turn === 'white' ? 'black' : 'white'
+  suggestedMoves = []
+  votes = 0
+  finalMove = null
+
+  io.emit('resetMove')
+}
+
+function resetCountdown(io) {
+  clearInterval(countdown);
+  countdownTime = countdownTimeStart;
+  io.emit('countdown', countdownTime);
+}
 
 export function initializeSocketHandlers(io) {
   io.on('connection', (socket) => {
@@ -82,7 +95,7 @@ export function initializeSocketHandlers(io) {
   
             if (queueLength === 1) {
                 playersJoined[0].emit('notEnoughPlayers', 'Not enough players')
-                resetCountdown()
+                resetCountdown(io)
                 queueLength = 0
                 playersJoined = []
             }
@@ -100,7 +113,7 @@ export function initializeSocketHandlers(io) {
       }
   
       if (queueLength === 0) {
-        resetCountdown()
+        resetCountdown(io)
       }
     })
   
@@ -126,7 +139,7 @@ export function initializeSocketHandlers(io) {
       if (turn === 'black') {
         if (blackPlayers.length === 1 && arrLengthCheck(blackPlayers, suggestedMoves)) {
           io.emit("receiveFinalMove", suggestedMoves[0], turn === 'white' ? 'black' : 'white'); // send turn also
-          resetMoveAndSwitchTurn()
+          resetMoveAndSwitchTurn(io)
         }
         
         if (blackPlayers.length > 1) {
@@ -135,7 +148,7 @@ export function initializeSocketHandlers(io) {
           if (arrLengthCheck(blackPlayers, suggestedMoves)) {
             if (mostFrequentPropertyValues(suggestedMoves).length === 1) {
               io.emit("receiveFinalMove", suggestedMoves[0], turn === 'white' ? 'black' : 'white'); // send turn also
-              resetMoveAndSwitchTurn()
+              resetMoveAndSwitchTurn(io)
             } else {
               io.to(turn).emit('allTeamMoved', suggestedMoves)
             }
@@ -146,7 +159,7 @@ export function initializeSocketHandlers(io) {
       if (turn === 'white') {
         if (whitePlayers.length === 1 && arrLengthCheck(whitePlayers, suggestedMoves)) {
           io.emit("receiveFinalMove", suggestedMoves[0], turn === 'white' ? 'black' : 'white'); // send turn also
-          resetMoveAndSwitchTurn()
+          resetMoveAndSwitchTurn(io)
         }
         
         if (whitePlayers.length > 1) {
@@ -155,7 +168,7 @@ export function initializeSocketHandlers(io) {
           if (arrLengthCheck(whitePlayers, suggestedMoves)) {
             if (mostFrequentPropertyValues(suggestedMoves).length === 1) {
               io.emit("receiveFinalMove", suggestedMoves[0], turn === 'white' ? 'black' : 'white'); // send turn also
-              resetMoveAndSwitchTurn()
+              resetMoveAndSwitchTurn(io)
             } else {
               io.to(turn).emit('allTeamMoved', suggestedMoves)
             }
@@ -185,7 +198,7 @@ export function initializeSocketHandlers(io) {
           } else {
               const maxVotesMove = data.mostFrequent.reduce((prev, current) => (prev.numberOfVotes > current.numberOfVotes) ? prev : current);
               io.emit("receiveFinalMove", maxVotesMove, turn === 'white' ? 'black' : 'white'); // send turn also
-              resetMoveAndSwitchTurn();
+              resetMoveAndSwitchTurn(io);
           }
       }
   });

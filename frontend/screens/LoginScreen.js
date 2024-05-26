@@ -1,36 +1,27 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, Button, StyleSheet, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useCustomContext } from '../contexts/globalContext';
+import useApiService from '../hooks/useApiService';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const { setUser } = useCustomContext();
+  const { login, data, loading, error } = useApiService()
 
   const handleLogin = async () => {
-    try {
-      const response = await fetch(`http://${process.env.IP_ADDRESS}:3000/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      const text = await response.text();
-      try {
-        const data = JSON.parse(text);
-        if (response.ok) {
-          await AsyncStorage.setItem('token', data.token);
-          console.log('User signed in successfully!');
-          navigation.navigate('Queue'); 
-        } else {
-          console.error('Authentication error:', data.message);
-        }
-      } catch (jsonError) {
-        console.error('Error parsing JSON:', jsonError, 'Response text:', text);
-      }
-    } catch (error) {
-      console.error('Authentication error:', error.message);
-    }
+    await login(email, password)
   };
-  
+
+  useEffect(() => {
+    (async () => {
+      if (data) {
+        await AsyncStorage.setItem('token', data.token);
+        setUser(data.token);
+      }
+    })();
+  }, [data]);
 
   return (
     <View style={styles.container}>
@@ -53,6 +44,8 @@ const LoginScreen = ({ navigation }) => {
       <Text style={styles.toggleText} onPress={() => navigation.navigate('Signup')}>
         Need an account? Sign Up
       </Text>
+      {error && <Text style={{ color: 'red' }}>{error}</Text>}
+      {loading && <ActivityIndicator size="large" color="#3498db" />}
     </View>
   );
 };

@@ -1,31 +1,28 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, Button, StyleSheet, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import useApiService from '../hooks/useApiService';
+import { useCustomContext } from '../contexts/globalContext';
 
 const SignupScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
+  const { signup, data, loading, error } = useApiService()
+  const { setUser } = useCustomContext();
 
   const handleSignup = async () => {
-    try {
-      const response = await fetch(`http://${process.env.IP_ADDRESS}:3000/signup`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, username }),
-      });
-      const data = await response.json();
-      if (response.ok) {
-        console.log('User signed up and profile created successfully!');
-        await AsyncStorage.setItem('token', data.token);
-        navigation.navigate('Queue'); 
-      } else {
-        console.error('Authentication error:', data.message);
-      }
-    } catch (error) {
-      console.error('Authentication error:', error.message);
-    }
+    await signup(email, password, username)
   };
+
+  useEffect(() => {
+    (async () => {
+      if (data) {
+        await AsyncStorage.setItem('token', data.token);
+        setUser(data.token);
+      }
+    })();
+  }, [data]);
 
   return (
     <View style={styles.container}>
@@ -50,10 +47,12 @@ const SignupScreen = ({ navigation }) => {
         placeholder="Password"
         secureTextEntry
       />
-      <Button title="Sign Up" onPress={handleSignup} color="#3498db" />
+      <Button title="SIGN UP" onPress={handleSignup} color="#3498db" />
       <Text style={styles.toggleText} onPress={() => navigation.navigate('Login')}>
         Already have an account? Sign In
       </Text>
+      {error && <Text style={{ color: 'red' }}>{error}</Text>}
+      {loading && <ActivityIndicator size="large" color="#3498db" />}
     </View>
   );
 };
