@@ -7,9 +7,15 @@ import SignupScreen from './screens/SignupScreen';
 import LeaderboardScreen from './screens/LeaderboardScreen';
 import Queue from './screens/Queue';
 import Account from './screens/Account';
+import MainMenu from './screens/MainMenu';
+import Instructions from './screens/Instructions';
+import GameOver from './screens/GameOver';
+import Win from './screens/Win';
+import Draw from './screens/Draw';
 import ContextProvider, { useCustomContext } from './contexts/globalContext';
 import useFetch from './hooks/useFetch';
 import { SimpleLineIcons, MaterialCommunityIcons, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
+import { NativeBaseProvider} from "native-base";
 
 const Tab = createBottomTabNavigator();
 
@@ -44,6 +50,7 @@ export default function App() {
   // }, [data, error])
 
   return (
+  <NativeBaseProvider>
     <NavigationContainer>
       <Tab.Navigator>
       {!user ? (
@@ -69,6 +76,8 @@ export default function App() {
         </>
       ) : (
         <>
+        <Tab.Screen name="MainMenu" component={MainMenu} />
+        <Tab.Screen name="Instructions" component={Instructions} />
           <Tab.Screen 
             name="Leaderboard" 
             component={LeaderboardScreen} 
@@ -97,9 +106,13 @@ export default function App() {
               ) 
             }} 
           />
+          <Tab.Screen name="GameOver" component={GameOver} />
+          <Tab.Screen name="Win" component={Win} />
+          <Tab.Screen name="Draw" component={Draw} />
         </>
       )}
       </Tab.Navigator>
     </NavigationContainer>
+    </NativeBaseProvider>
   );
 }
