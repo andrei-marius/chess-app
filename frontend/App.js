@@ -10,12 +10,14 @@ import Instructions from "./screens/Instructions";
 import Win from "./screens/Win";
 import GameOver from "./screens/GameOver";
 import Draw from "./screens/Draw";
+import {NativeBaseProvider} from "native-base";
 
 
 const Stack = createNativeStackNavigator();
 
 const App = () => {
     return (
+      <NativeBaseProvider>
       <ContextProvider>
         <NavigationContainer>
           <Stack.Navigator>
@@ -30,6 +32,7 @@ const App = () => {
           </Stack.Navigator>
         </NavigationContainer>
       </ContextProvider>
+      </NativeBaseProvider>
     );
 }
 
