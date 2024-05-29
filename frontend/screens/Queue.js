@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { Text, Button, View, StyleSheet  } from "react-native";
+import { StyleSheet  } from "react-native";
 import socket from "../socketConnection";
 import { useCustomContext } from "../contexts/globalContext";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { formatTime } from "../utils";
+// import AsyncStorage from '@react-native-async-storage/async-storage';
+// import { formatTime } from "../utils";
+import {Box, VStack, Text, Center, Button} from "native-base";
+import { LinearGradient } from "expo-linear-gradient";
+import { ActivityIndicator } from "react-native";
 
 const Queue = ({ navigation }) => {
     const [ queueLength, setQueueLength ] = useState(0)
@@ -56,35 +59,53 @@ const Queue = ({ navigation }) => {
     }
 
   return (
-    <View style={{ flex: 1 }}>
-      <View style={styles.mainContent}>
-        {msg && <Text>{msg}</Text>}
-        {joined &&
-          <>
-            <Text>Time left: {formatTime(countdown)}</Text>
-            <Text>{queueLength} in queue</Text>
-          </>
-        }
-        <Button onPress={handleQueue} title={title}></Button>
-      </View>
-    </View>
-);
-};
+<Box flex={1}>
+<LinearGradient flex={1} colors={['#332a43', '#354c7c']}> 
+<Center w="100%" h="20%" position="absolute" top="100">
+    <Text fontSize="30" style={styles.title} >Joining the queue...</Text>
+</Center>
 
-const styles = StyleSheet.create({
-  mainContent: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  navBar: {
-    height: 60,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#ddd',
-    borderTopWidth: 1,
-    borderTopColor: '#ccc',
-  },
-});
+<Box position="absolute" w="87%" h="45%" alignItems="center" top="250" left="27" bg="#eeeeee" borderRadius={10} borderBottomWidth="8" borderWidth="3" p="7" pt="10">
+<Text style={styles.text} fontSize="23">Did you know that...</Text>
+<VStack space={5} pt="3" />
+<Text style={styles.text} fontSize="15">...the longest chess game theoretically possible is 5,949 moves? This limit is based on the "50-move rule," which allows either player to claim a draw if no pawn move 
+or capture has been made in the last 50 moves. This means that a game can technically continue for up to 5,949 moves before ending in a draw!</Text>
+</Box>
+<ActivityIndicator size="large" style={{position: "absolute", top: 640, left: 185}}></ActivityIndicator>
+</LinearGradient>
+</Box>
+    )
+}
+
+const styles = StyleSheet.create ({
+    text: {
+        textAlign: "center",
+        paddingBottom: 2,
+        color: "black",
+        fontWeight: "bold",
+        width: "98%",
+    },
+
+    title: {
+        borderBottomWidth: 3, 
+        borderBottomColor: "whitesmoke", 
+        color: "whitesmoke",
+        fontWeight: "bold"
+    },
+
+    buttonMenu: {
+        borderBottomWidth: 8,
+        borderWidth: 3,
+        borderRadius: 15,
+        borderColor: "#000000",
+        backgroundColor: "#97541e",
+    },
+
+    textStyle: {
+        fontWeight: "bold",
+        fontSize: 18,
+        color: "whitesmoke",
+    }
+})
 
 export default Queue;

@@ -1,31 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import {Text, TextInput, StyleSheet, ActivityIndicator} from 'react-native';
+import React from 'react';
+import {Text, TextInput, StyleSheet} from 'react-native';
 import {Box, Button} from 'native-base';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import useApiService from '../hooks/useApiService';
-import { useCustomContext } from '../contexts/globalContext';
+// import AsyncStorage from '@react-native-async-storage/async-storage';
+// import useApiService from '../hooks/useApiService';
+// import { useCustomContext } from '../contexts/globalContext';
 
 const SignupScreen = ({ navigation }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [username, setUsername] = useState('');
-  const { signup, data, loading, error } = useApiService()
-  const { setUser } = useCustomContext();
+//   const [email, setEmail] = useState('');
+//   const [password, setPassword] = useState('');
+//   const [username, setUsername] = useState('');
+//   const { signup, data, loading, error } = useApiService()
+//   const { setUser } = useCustomContext();
 
-  const handleSignup = async () => {
-    await signup(email, password, username)
-  };
+//   const handleSignup = async () => {
+//     await signup(email, password, username)
+//   };
 
-  useEffect(() => {
-    (async () => {
-      if (data) {
-        await AsyncStorage.setItem('token', data.token);
-        setUser(data.token);
-      }
-    })();
-  }, [data]);
+//   useEffect(() => {
+//     (async () => {
+//       if (data) {
+//         await AsyncStorage.setItem('token', data.token);
+//         setUser(data.token);
+//       }
+//     })();
+//   }, [data]);
 
 
   return (
@@ -36,32 +36,32 @@ const SignupScreen = ({ navigation }) => {
       <Text style={styles.title}>Sign Up</Text>
       <TextInput
         style={styles.input}
-        value={username}
-        onChangeText={setUsername}
+        // value={username}
+        // onChangeText={setUsername}
         placeholder="Username"
       />
       <TextInput
         style={styles.input}
-        value={email}
-        onChangeText={setEmail}
+        // value={email}
+        // onChangeText={setEmail}
         placeholder="Email"
         autoCapitalize="none"
       />
       <TextInput
         style={styles.input}
-        value={password}
-        onChangeText={setPassword}
+        // value={password}
+        // onChangeText={setPassword}
         placeholder="Password"
         secureTextEntry
       />
-      <Button onPress={handleSignup} w="50%" mt="3" bg="#3498db" style={styles.buttonStyle}>
+      <Button onPress={() => navigation.navigate('MainMenu')} w="50%" mt="3" style={styles.buttonStyle}>
         <Text style={styles.buttonText}>Sign up</Text>
       </Button>
       <Text style={styles.toggleText} onPress={() => navigation.navigate('Login')}>
         Already have an account? Sign in here!
       </Text>
-      {error && <Text style={{ color: 'red', fontWeight: "bold", fontSize: 16 }}>{error}</Text>}
-      {loading && <ActivityIndicator size="large" color="#3498db" />}
+      {/* {error && <Text style={{ color: 'red', fontWeight: "bold", fontSize: 16 }}>{error}</Text>}
+      {loading && <ActivityIndicator size="large" color="#3498db" />} */}
       </Box>
       </Box>
       </LinearGradient>
@@ -84,13 +84,16 @@ const styles = StyleSheet.create({
 
   buttonStyle: {
     borderRadius: 10,
-    borderBottomWidth: 5,
+    borderBottomWidth: 8,
+    borderWidth: 3,
+    backgroundColor: "#727499"
 
   },
 
   buttonText: {
     fontSize: 18,
     fontWeight: "bold",
+    color: "whitesmoke",
   },
 
   input: {
@@ -105,6 +108,7 @@ const styles = StyleSheet.create({
     color: 'black',
     fontWeight: "bold",
   },
+
   toggleText: {
     color: 'whitesmoke',
     borderBottomColor: "whitesmoke",

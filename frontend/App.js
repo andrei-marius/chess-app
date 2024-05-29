@@ -20,8 +20,8 @@ import { NativeBaseProvider} from "native-base";
 const Tab = createBottomTabNavigator();
 
 export default function App() {
-  const { data, fetchData, error } = useFetch();
-  const { setUser, user } = useCustomContext();
+  // const { data, fetchData, error } = useFetch();
+  // const { setUser, user } = useCustomContext();
 
   // useEffect(() => {
   //   const checkUserLoggedIn = async () => {
@@ -53,8 +53,6 @@ export default function App() {
   <NativeBaseProvider>
     <NavigationContainer>
       <Tab.Navigator>
-      {!user ? (
-        <>
           <Tab.Screen 
             name="Login" 
             component={LoginScreen} 
@@ -73,9 +71,6 @@ export default function App() {
               ) 
             }} 
           />
-        </>
-      ) : (
-        <>
         <Tab.Screen name="MainMenu" component={MainMenu} />
         <Tab.Screen name="Instructions" component={Instructions} />
           <Tab.Screen 
@@ -109,8 +104,6 @@ export default function App() {
           <Tab.Screen name="GameOver" component={GameOver} />
           <Tab.Screen name="Win" component={Win} />
           <Tab.Screen name="Draw" component={Draw} />
-        </>
-      )}
       </Tab.Navigator>
     </NavigationContainer>
     </NativeBaseProvider>

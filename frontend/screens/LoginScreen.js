@@ -47,7 +47,7 @@ const LoginScreen = ({ navigation }) => {
         placeholder="Password"
         secureTextEntry
       />
-      <Button onPress={handleLogin} w="50%" mt="3" bg="#3498db" style={styles.buttonStyle}>
+      <Button onPress={handleLogin} w="50%" mt="3" style={styles.buttonStyle}>
         <Text style={styles.buttonText}>Log in</Text>
       </Button>
       <Text style={styles.toggleText} onPress={() => navigation.navigate('Signup')}>
@@ -78,14 +78,17 @@ const styles = StyleSheet.create({
 
   buttonStyle: {
     borderRadius: 10,
-    borderBottomWidth: 5,
+    borderBottomWidth: 8,
+    borderWidth: 3,
     marginLeft: 135,
+    backgroundColor: "#727499",
 
   },
 
   buttonText: {
     fontSize: 18,
     fontWeight: "bold",
+    color: "whitesmoke",
   },
 
   input: {

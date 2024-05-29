@@ -1,25 +1,68 @@
-import {Text, Center, Box, Image} from "native-base";
+import {Text, Center, Box, VStack, Button} from "native-base";
+import { LinearGradient } from "expo-linear-gradient";
+import { StyleSheet } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 
 const Instructions = () => {
+
+    const navigation = useNavigation();
+
     return (
 
 <Box flex={1}>
-    <Image flex={5} paddingTop="8" alt="bg" resizeMode="cover" size="xl" w="full" style={{opacity: 0.4}}source={require("../assets/chess_background.jpg")} />
-<Center w="100%" h="20%" position="absolute" top="0">
-    <Text fontSize="30" borderBottomColor="black" borderBottomWidth="2" >How to play?</Text>
+<LinearGradient flex={1} colors={['#c59f2a', '#b45f06']}>
+<Center w="100%" h="20%" position="absolute" top="-20">
+    <Text fontSize="30" style={styles.title} >How to play?</Text>
 </Center>
 
-<Box position="absolute" w="80%" h="70%" alignItems="center" top="150" left="39" bg="#D9D9D9" p="4">
-<Text color="black" textAlign="center">In this unique chess format, each move is determined not by a single player, but through a majority vote from a team. Here's how you can play:</Text>
-<Text textAlign="center">Form Teams: Each side of the chessboard is controlled by a team rather than an individual. Each team discusses and decides on their moves collectively.</Text>
-<Text textAlign="center">Propose Moves: During your team's turn, any team member can propose a move. Discussion is encouraged to explore the best possible strategy.</Text>
-<Text textAlign="center">Vote on Moves: After a brief discussion period, the team votes on the proposed moves. Each team member casts a vote for the move they believe is best.</Text>
-<Text textAlign="center">Determine the Move: The move that receives the majority of votes is executed on the chessboard. If there's a tie, the team captain has the deciding vote.</Text>
-<Text textAlign="center">Execute and Alternate: Once the move is executed, the turn passes to the opposing team, and the process repeats.</Text>
+<Box position="absolute" w="87%" h="70%" alignItems="center" top="105" left="27" bg="#eeeeee" borderRadius={10} borderBottomWidth="8" borderWidth="3" p="7">
+<Text style={styles.text}>In this unique chess format, each move is determined not by a single player, but through a majority vote from a team. Here's how you can play:</Text>
+<VStack space={5} pt="3" />
+<Text style={styles.text}> ● Form Teams: Controlled individually, but the moves are decided collectively.</Text>
+<VStack space={5} pt="3" />
+<Text style={styles.text}>● Propose Moves: Any team member can propose a move.</Text>
+<VStack space={5} pt="3" />
+<Text style={styles.text}> ● Vote on Moves: Each team member casts a vote for the move they believe is best.</Text>
+<VStack space={5} pt="3" />
+<Text style={styles.text}> ● Determine the Move: The move that receives the majority of votes is executed on the chessboard. If there's a tie, the team captain has the deciding vote.</Text>
+<VStack space={5} pt="3" />
+<Text style={styles.text}> ● Execute and Alternate: Once the move is executed, the turn passes to the opposing team, and the process repeats.</Text>
 </Box>
-
+<Button size="lg"  position="absolute" top="638" left="128" variant={"outline"} w="35%" p="3" style={styles.buttonMenu} onPress={() => navigation.navigate("MainMenu")}><Text style={styles.textStyle}>Back</Text></Button>
+</LinearGradient>
 </Box>
     )
 }
+
+const styles = StyleSheet.create ({
+    text: {
+        textAlign: "center",
+        paddingBottom: 2,
+        color: "black",
+        fontWeight: "bold",
+        width: "97%",
+    },
+
+    title: {
+        borderBottomWidth: 3, 
+        borderBottomColor: "black", 
+        color: "black",
+        fontWeight: "bold"
+    },
+
+    buttonMenu: {
+        borderBottomWidth: 8,
+        borderWidth: 3,
+        borderRadius: 15,
+        borderColor: "#000000",
+        backgroundColor: "#97541e",
+    },
+
+    textStyle: {
+        fontWeight: "bold",
+        fontSize: 18,
+        color: "whitesmoke",
+    }
+})
 
 export default Instructions;
