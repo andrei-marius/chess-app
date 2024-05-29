@@ -3,28 +3,24 @@ import { LinearGradient } from "expo-linear-gradient";
 import { StyleSheet} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { FontAwesome6 } from '@expo/vector-icons';
 
 
-const Draw = () => 
-    {
-        const navigation = useNavigation();
+
+const WinBlack = () => 
+    {const navigation = useNavigation();
 
         return (
             <Box flex={1}>
-            <LinearGradient flex={1} colors={['#332a43', '#354c7c']}> 
+            <LinearGradient flex={1} colors={['#38761d', '#7f6000']}> 
             <Center w="100%" h="auto" position="absolute" top="150">
-                <Text fontSize="30" style={styles.title} >Game Over</Text>
+                <Text fontSize="30" style={styles.title} >Well Done!</Text>
             </Center>
             
-            <Box position="absolute" w="78%" h="35%" alignItems="center" top="250" left="39" bg="#eeeeee" borderRadius={10} borderBottomWidth="8" borderWidth="3" p="7">
-            <Text style={styles.text} fontSize="35">It's a draw!</Text>
+            <Box position="absolute" w="78%" h="35%" alignItems="center" top="250" left="39" bg="#eeeeee" borderRadius={10} borderBottomWidth="8" borderWidth="3" p="5">
+            <Text style={styles.text} fontSize="35">Black Team Wins!</Text>
             </Box>
-            <Flex direction="row" justifyContent="center" alignItems="center" style={{marginTop: 390}}>
-            <MaterialCommunityIcons name="chess-queen" size={65} color="black" style={{marginRight: 30, marginLeft: 10}}/>
-            <FontAwesome6 name="chess-queen" size={55} color="black" style={{marginRight: 30, marginLeft: 5 }}/>
-            </Flex>
-            <Flex direction="row" justifyContent="center" alignItems="center" style={{marginTop: 110}}>
+            <MaterialCommunityIcons name="chess-queen" size={65} color="black" style={styles.chessPiece}/>
+            <Flex direction="row" justifyContent="center" alignItems="center" position="relative" top="598">
             <Button size="lg" variant={"outline"} w="35%" p="3" style={styles.buttonMenu} mr="10" onPress={() => navigation.navigate("Queue")}><Text style={styles.textStyle}>Play again</Text></Button>
             <Button size="lg"  variant={"outline"} w="35%" p="3" style={styles.buttonMenu} onPress={() => navigation.navigate("MainMenu")}><Text style={styles.textStyle}>Back</Text></Button>
             </Flex>
@@ -39,7 +35,7 @@ const Draw = () =>
                     paddingBottom: 2,
                     color: "black",
                     fontWeight: "bold",
-                    paddingTop: 30
+                    paddingTop: 10
                 },
             
                 title: {
@@ -54,7 +50,7 @@ const Draw = () =>
                     borderWidth: 3,
                     borderRadius: 15,
                     borderColor: "#000000",
-                    backgroundColor: "#727499",
+                    backgroundColor: "#c16216",
                 },
             
                 textStyle: {
@@ -63,6 +59,13 @@ const Draw = () =>
                     color: "whitesmoke",
                 },
 
+                chessPiece: {
+                    position: "absolute",
+                    top: 410,
+                    left: 168,
+
+                }
             })
 
-export default Draw;
+
+export default WinBlack;

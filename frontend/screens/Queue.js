@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet  } from "react-native";
+import { StyleSheet} from "react-native";
 import socket from "../socketConnection";
 import { useCustomContext } from "../contexts/globalContext";
 // import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -61,17 +61,17 @@ const Queue = ({ navigation }) => {
   return (
 <Box flex={1}>
 <LinearGradient flex={1} colors={['#332a43', '#354c7c']}> 
-<Center w="100%" h="20%" position="absolute" top="100">
+<Center w="100%" h="auto" position="absolute" top="150">
     <Text fontSize="30" style={styles.title} >Joining the queue...</Text>
 </Center>
 
-<Box position="absolute" w="87%" h="45%" alignItems="center" top="250" left="27" bg="#eeeeee" borderRadius={10} borderBottomWidth="8" borderWidth="3" p="7" pt="10">
+<Box position="absolute" w="87%" alignItems="center" top="250" left="27" bg="#eeeeee" borderRadius={10} borderBottomWidth="8" borderWidth="3" p="7" pt="10">
 <Text style={styles.text} fontSize="23">Did you know that...</Text>
 <VStack space={5} pt="3" />
 <Text style={styles.text} fontSize="15">...the longest chess game theoretically possible is 5,949 moves? This limit is based on the "50-move rule," which allows either player to claim a draw if no pawn move 
 or capture has been made in the last 50 moves. This means that a game can technically continue for up to 5,949 moves before ending in a draw!</Text>
 </Box>
-<ActivityIndicator size="large" style={{position: "absolute", top: 640, left: 185}}></ActivityIndicator>
+<ActivityIndicator size="large" style={{position: "absolute", top: 620, left: 185}}></ActivityIndicator>
 </LinearGradient>
 </Box>
     )

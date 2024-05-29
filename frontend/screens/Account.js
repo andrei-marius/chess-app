@@ -1,5 +1,5 @@
 import {Box, Flex, Image, Text, Center, Button} from "native-base";
-import { StyleSheet } from "react-native";
+import { StyleSheet, ScrollView} from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 // import AsyncStorage from "@react-native-async-storage/async-storage";
 // import { useCustomContext } from "../contexts/globalContext";
