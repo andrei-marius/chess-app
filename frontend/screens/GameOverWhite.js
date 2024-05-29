@@ -21,7 +21,7 @@ const GameOverWhite = () =>
             <Text style={styles.text} fontSize="35">Black Team Wins!</Text>
             </Box>
             <MaterialCommunityIcons name="chess-queen" size={65} color="black" style={styles.chessPiece}/>
-            <Flex direction="row" justifyContent="center" alignItems="center" position="relative" top="598">
+            <Flex direction="row" justifyContent="center" alignItems="center" position="relative" top="566">
             <Button size="lg" variant={"outline"} w="35%" p="3" style={styles.buttonMenu} mr="10" onPress={() => navigation.navigate("Queue")}><Text style={styles.textStyle}>Play again</Text></Button>
             <Button size="lg"  variant={"outline"} w="35%" p="3" style={styles.buttonMenu} onPress={() => navigation.navigate("MainMenu")}><Text style={styles.textStyle}>Back</Text></Button>
             </Flex>

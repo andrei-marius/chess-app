@@ -14,6 +14,7 @@ import WinBlack from './screens/WinBlack';
 import GameOverWhite from './screens/GameOverWhite';
 import WinWhite from './screens/WinWhite';
 import Draw from './screens/Draw';
+import ChessGameplay from './screens/ChessGameplay';
 import ContextProvider, { useCustomContext } from './contexts/globalContext';
 import useFetch from './hooks/useFetch';
 import { SimpleLineIcons, MaterialCommunityIcons, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
@@ -108,6 +109,7 @@ export default function App() {
           <Tab.Screen name="WinWhite" component={WinWhite} />
           <Tab.Screen name="WinBlack" component={WinBlack} />
           <Tab.Screen name="Draw" component={Draw} />
+          <Tab.Screen name="ChessGameplay" component={ChessGameplay} />
       </Tab.Navigator>
     </NavigationContainer>
     </NativeBaseProvider>
