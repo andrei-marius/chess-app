@@ -22,7 +22,6 @@ function resetMoveAndSwitchTurn(io) {
   turn = turn === 'white' ? 'black' : 'white'
   suggestedMoves = []
   votes = 0
-  finalMove = null
 
   io.emit('resetMove')
 }
